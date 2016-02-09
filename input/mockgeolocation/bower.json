@@ -1,0 +1,29 @@
+{
+  "name": "mockgeolocation",
+  "version": "0.0.1",
+  "homepage": "https://github.com/srizzo/mockgeolocation",
+  "authors": [
+    "Samuel Rizzo <rizzolabs@gmail.com>"
+  ],
+  "description": "Mock Geolocation",
+  "main": "./dist/mockgeolocation.js",
+  "keywords": [
+    "mock",
+    "geolocation",
+    "mockgeolocation"
+  ],
+  "license": "MIT",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ],
+  "dependencies": {
+  },  
+  "devDependencies": {
+    "qunit": "1.16.0"    
+  }  
+  
+}

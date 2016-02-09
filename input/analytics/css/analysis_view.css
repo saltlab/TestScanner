@@ -1,0 +1,275 @@
+/***** TOOLBOX *****/
+
+#toolbox {
+	background: #C8E9F3;
+	padding: 7px 7px 7px 0;
+	text-align: left;
+	color: #424242;
+	border-bottom: 1px solid #B0D5E0;
+	height: 50px;
+}
+
+#toolbox #fact-selector {
+	display: inline;
+}
+
+#toolbox #fact-selector > div {
+	display: inline;
+	padding: 0 0 0 15px;
+}
+
+#toolbox #fact-selector .dropdown-menu {
+	max-height: 450px;
+	overflow-x: hidden;
+}
+
+#toolbox #fact-selector > div > ul {
+	padding: 0 0 0 7px;
+	margin: 0;
+}
+
+#toolbox #resize {
+	margin-right: 5px;
+}
+
+/***** COLUMNS *****/
+
+html, body {
+	height: 100%;
+	max-height: 100%;
+	overflow: hidden;
+	background: #FDFDFD;
+}
+
+#left-pane {
+	position:absolute;
+	left: 0;
+	top:100px;
+	bottom:0;
+	width:25%;
+	overflow-x: hidden;
+	overflow-y: auto;
+	padding-bottom: 30px;
+}
+
+#middle-pane {
+	position:absolute;
+	left: 25%;
+	top:100px;
+	bottom:0;
+	width:50%;
+	overflow-x: hidden;
+	overflow-y: auto;
+	box-shadow: inset 0px 0px 6px rgba(0,0,0,0.25);
+}
+
+#right-pane {
+	position:absolute;
+	right: 0;
+	top:100px;
+	bottom:0;
+	width:25%;
+	overflow-x: hidden;
+	overflow-y: auto;
+}
+
+/***** CHARTS *****/
+
+.chart {
+	overflow: hidden;
+}
+
+.chart .chart-title {
+	font-style: 90%;
+	font-weight: bold;
+	text-align: left;
+}
+
+.chart .chart-header {
+	padding: 5px;
+	background: #DAECF2;
+}
+
+.chart-columns-sortable .chart-header {
+	cursor: move;
+}
+
+div.dc-chart {
+	float: none;
+	position: relative;
+}
+
+.chart-title {
+	white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.chart-text {
+	display: none;
+}
+
+.chart-hidden .chart-text {
+	display: block;
+	text-align: center;
+	padding: 30px;
+	font-style: italic;
+	font-size: 110%;
+}
+
+.chart-hidden.chart-wordcloudWithLegend .chart-text, .chart-hidden .chart-container, .chart-hidden .wordcloud-legend, .chart-hidden .btn-dimparams {
+	display: none;
+}
+
+.chart-hidden.chart-wordcloudWithLegend .chart-header {
+	margin-bottom: 5px;
+}
+
+.chart-pie .chart-container, .chart-table .chart-container {
+	padding: 8px;
+}
+
+.btn-dimparams-container {
+	display: table-cell;
+	padding: 0 5px;
+	vertical-align: top;
+}
+
+.color-palette {
+	cursor: pointer;
+}
+
+.color-palette span {
+	display: inline-block;
+	width: 20px;
+	height: 20px;
+}
+
+.wordcloud-hidden-info.alert {
+	margin: 5px;
+	padding:5px 7px 5px 25px;
+	font-size: 90%;
+	line-height: 1.1em;
+	position: relative;
+}
+
+.wordcloud-hidden-info.alert i {
+	position: absolute;
+	left: 7px;
+	top: 5px;
+}
+
+.wordcloud-legend {
+	display: table-cell;
+	width: 100%;
+	font-size: 85%;
+}
+
+.chart-hidden #zoom {
+	display: none;
+}
+
+.chart-meta {
+	float: right;
+}
+
+.chart-meta > span {
+	margin-left: 7px;
+}
+
+.chart-meta .chart-levels-icons {
+	position: relative;
+	display: inline-block;
+	width: 4px;
+}
+
+.chart-meta .chart-levels-icons span {
+	position: absolute;
+	left: 0;
+}
+
+.chart-meta .chart-levels-icons .fa-caret-up {
+	bottom: 3px;
+}
+
+.chart-meta .chart-levels-icons .fa-caret-down {
+	bottom: -5px;
+}
+
+.chart-columns svg {
+	margin: 0 auto;
+	display: block;
+}
+
+.fa-nomargin {
+	margin: 0;
+}
+
+#zoom {
+	position: absolute;
+	right: 0;
+	bottom: 5px;
+}
+
+table.dc-chart {
+	margin: 0 auto;
+	border-collapse: collapse;
+	background: #EEE;
+	border-spacing: 0;
+	width: 55%;
+}
+
+table.dc-chart th, table.dc-chart td {
+	padding: 10px;
+}
+
+table.dc-chart th {
+	background: #5B799E;
+	border-bottom: 5px solid #36485e;
+	border-right: solid 1px #475F7C;
+}
+
+table.dc-chart td {
+	border-right: 1px solid #FFF;
+	padding: 4px 7px;
+	cursor: pointer;
+}
+
+table.dc-chart tr:nth-child(odd) td {
+	background: #E6E6E6;
+}
+
+table.dc-chart .selected {
+	font-weight: bold;
+}
+
+table.dc-chart .deselected {
+	color: #CCC;
+}
+
+table.dc-chart .dc-table-group {
+	display: none;
+}
+
+/***** SAVE *****/
+
+#abstract-save {
+	width: 98%;
+	resize: none;
+}
+
+#title-save {
+	width: 98%;
+}
+
+/* jQuery Resizable Columns v0.1.0 | http://dobtco.github.io/jquery-resizable-columns/ | Licensed MIT | Built Wed Apr 30 2014 14:24:25 */
+.rc-handle-container {
+	position: relative;
+}
+.rc-handle {
+	position: absolute;
+	width: 7px;
+	cursor: ew-resize;
+	margin-left: -3px;
+	z-index: 2;
+}

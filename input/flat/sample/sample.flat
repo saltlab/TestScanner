@@ -1,0 +1,7 @@
+name:item1
+color:red
+shapes:square,circle
+
+name:itemB
+color:blue
+shapes:triangle,oval,circle

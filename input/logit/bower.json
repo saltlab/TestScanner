@@ -1,0 +1,42 @@
+{
+  "name": "LogIt",
+  "version": "0.2.0",
+  "description": "Offline timesheet",
+  "main": "app.js",
+  "keywords": [
+    "log",
+    "time"
+  ],
+  "authors": [
+    "Mohit Aggarwal"
+  ],
+  "license": "MIT",
+  "private": true,
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ],
+  "devDependencies": {
+    "jquery": "~2.1.3",
+    "underscore": "~1.7.0",
+    "backbone": "~1.1.2",
+    "bootstrap": "~3.3.1",
+    "datejs": "~1.0.0-rc3",
+    "typehead.js": "~0.10.5",
+    "bootstrap-datepicker": "~1.3.1",
+    "qunit": "~1.16.0",
+    "sinon": "~1.12.2"
+  },
+  "dependencies": {
+    "jquery": "~2.1.3",
+    "underscore": "~1.7.0",
+    "backbone": "~1.1.2",
+    "bootstrap": "~3.3.1",
+    "datejs": "~1.0.0-rc3",
+    "typehead.js": "~0.10.5",
+    "bootstrap-datepicker": "~1.3.1"
+  }
+}
