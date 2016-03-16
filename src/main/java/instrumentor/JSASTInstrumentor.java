@@ -6,6 +6,7 @@ import java.util.List;
 import org.apache.commons.lang3.ArrayUtils;
 import org.mozilla.javascript.CompilerEnvirons;
 import org.mozilla.javascript.Parser;
+import org.mozilla.javascript.ast.Assignment;
 import org.mozilla.javascript.ast.AstNode;
 import org.mozilla.javascript.ast.AstRoot;
 import org.mozilla.javascript.ast.Block;
@@ -13,6 +14,7 @@ import org.mozilla.javascript.ast.ExpressionStatement;
 import org.mozilla.javascript.ast.FunctionCall;
 import org.mozilla.javascript.ast.FunctionNode;
 import org.mozilla.javascript.ast.Name;
+import org.mozilla.javascript.ast.InfixExpression;
 import org.mozilla.javascript.ast.NewExpression;
 import org.mozilla.javascript.ast.NodeVisitor;
 import org.mozilla.javascript.ast.ObjectProperty;
@@ -23,6 +25,8 @@ import org.mozilla.javascript.ast.ObjectProperty;
  */
 
 public class JSASTInstrumentor implements NodeVisitor{
+
+	private boolean instrumentationEnable = true;
 
 	private int instrumentedLinesCounter = 0;
 
@@ -39,7 +43,58 @@ public class JSASTInstrumentor implements NodeVisitor{
 	private int assertionCounter = 0;
 	private int newExpressionCounter = 0;
 	private int triggerCounetr = 0;
-	
+
+	private ArrayList<Integer> coveredStatementLines = new ArrayList<Integer>();
+	private ArrayList<Integer> missedStatementLines = new ArrayList<Integer>();
+	public ArrayList<Integer> getMissedStatementLines() {
+		return missedStatementLines;
+	}
+	private ArrayList<Integer> missedStatementInMissedFunction = new ArrayList<Integer>();
+	public ArrayList<Integer> getMissedStatementInMissedFunction() {
+		return missedStatementInMissedFunction;
+	}
+	private ArrayList<Integer> coveredFunctionsIndices = new ArrayList<Integer>();
+	private ArrayList<Integer> missedFunctionsIndices = new ArrayList<Integer>();
+	private ArrayList<String> coveredFunctions = new ArrayList<String>();
+	public ArrayList<String> getCoveredFunctions() {
+		return coveredFunctions;
+	}
+	private ArrayList<String> coveredFunctionsLoc = new ArrayList<String>();
+	public ArrayList<String> getCoveredFunctionsLoc() {
+		return coveredFunctionsLoc;
+	}
+
+	private ArrayList<String> missedFunctions = new ArrayList<String>();
+	public ArrayList<String> getMissedFunctions() {
+		return missedFunctions;
+	}
+	private ArrayList<String> missedFunctionsLoc = new ArrayList<String>();
+	public ArrayList<String> getMissedFunctionsLoc() {
+		return missedFunctionsLoc;
+	}
+
+	private ArrayList<Integer> coveredFunctionLines = new ArrayList<Integer>();
+	public ArrayList<Integer> getCoveredFunctionLines() {
+		return coveredFunctionLines;
+	}
+	private ArrayList<Integer> missedFunctionLines = new ArrayList<Integer>();
+	public ArrayList<Integer> getMissedFunctionLines() {
+		return missedFunctionLines;
+	}
+
+	private ArrayList<String> functionCalls = new ArrayList<String>();
+	public ArrayList<String> getFunctionCalls() {
+		return functionCalls;
+	}
+
+	private int functionCounter = 0;
+
+	private String visitOnly = "";
+
+	public void setVisitOnly(String visitOnly){
+		this.visitOnly = visitOnly;
+	}
+
 	public JSASTInstrumentor(){
 	}
 
@@ -87,15 +142,29 @@ public class JSASTInstrumentor implements NodeVisitor{
 	 * @return The function name.
 	 */
 	protected String getFunctionName(FunctionNode f) {
+		// http://www.bryanbraun.com/2014/11/27/every-possible-way-to-define-a-javascript-function
 		if (f==null)
 			return "NoFunctionNode";
 		else if(f.getParent() instanceof ObjectProperty){
 			return ((ObjectProperty)f.getParent()).getLeft().toSource();
+		}else if(f.getParent() instanceof Assignment){
+			Assignment asmt = (Assignment)f.getParent();
+			String varName = asmt.getLeft().toSource();
+			//System.out.println("**** Variable:" + varName + " is set to: " + asmt.getRight().toSource());
+			return varName;
+		}else if(f.getParent() instanceof InfixExpression){
+			if(f.getParent().getParent() instanceof Assignment){
+				Assignment asmt = (Assignment)f.getParent().getParent();
+				String varName = asmt.getLeft().toSource();
+				//System.out.println("**** Variable:" + varName + " is set to: " + asmt.getRight().toSource());
+				return varName;
+			}
 		}
+
 		Name functionName = f.getFunctionName();
 
 		if (functionName == null) {
-			return "anonymous" + f.getLineno();
+			return "anonymous" + (f.getLineno()+1);
 		} else {
 			return functionName.toSource();
 		}
@@ -123,29 +192,241 @@ public class JSASTInstrumentor implements NodeVisitor{
 	 * @return Whether to visit the children.
 	 */
 	public boolean visit(AstNode node) {	
+
 		//System.out.println("visit");
 		String nodeName = node.shortName();
 		int nodeType = node.getType();
 		int nodeDepth = node.depth();
-		/*
-		System.out.println("node.shortName() : " + nodeName);
-		System.out.println("node.depth() : " + nodeDepth);
-		System.out.println("node.getLineno() : " + (node.getLineno()+1));
-		System.out.println("node.toSource() : \n" + node.toSource());
-		System.out.println("node.getType() : " + node.getType());
-		System.out.println("node.debugPrint() : \n" + node.debugPrint());
-		 */
 
-		if (node instanceof NewExpression)
-			newExpressionCounter++;
-		else if (node instanceof FunctionCall)
-			instrumentFunctionCallNode(node);
-		else if (node instanceof FunctionNode)
-			instrumentFunctionNode(node);
+		//System.out.println("node.shortName() : " + nodeName);
+		//System.out.println("node.getLineno() : " + (node.getLineno()+1));
+
+		//System.out.println(coveredStatementLines);
+		if (!coveredStatementLines.contains(node.getLineno()+1)){
+			//System.out.println("node.shortName() : " + nodeName);
+			//System.out.println("node.getLineno() : " + (node.getLineno()+1));
+			//System.out.println("node.depth() : " + nodeDepth);
+			//System.out.println("node.toSource() : \n" + node.toSource());
+			//System.out.println("node.getType() : " + node.getType());
+			//System.out.println("node.debugPrint() : \n" + node.debugPrint());
+		}
+
+		if (instrumentationEnable==true){
+			if (node instanceof NewExpression)
+				newExpressionCounter++;
+			else if (node instanceof FunctionCall)
+				instrumentFunctionCallNode(node);
+			else if (node instanceof FunctionNode)
+				instrumentFunctionNode(node);
+		}else{
+			if (visitOnly .equals("FunctionNode")){
+				if (node instanceof FunctionNode)
+					analyzeFunctionNode(node);
+			}else{
+				if (node instanceof FunctionCall)
+					analyzeFunctionCallNode(node);
+				else if (node instanceof Assignment)
+					analyzeAssignmentNode(node);
+			}
+		}
 
 		/* have a look at the children of this node */
 		return true;
 	}
+
+
+	private void analyzeFunctionNode(AstNode node) {
+		FunctionNode f = (FunctionNode) node;
+		int numOfParam = f.getParams().size();
+		int lineNumber = node.getLineno()+1;
+		int fLength = f.getEndLineno() - f.getLineno();		
+		int fDepth = node.depth();
+		String funcLocation = "regular";
+		String functionName = getFunctionName(f);
+		//System.out.println("Function name: " + functionName);
+		AstNode parentNode = node.getParent();
+		String parentNodeSource = parentNode.toSource();
+		String parentNodeName = parentNode.shortName();
+		//System.out.println("shortName: " + shortName);
+		//System.out.println("parentNodeName: " + parentNodeName);
+
+		String enclosingFunction = "";
+		if (node.getEnclosingFunction()!=null){
+			enclosingFunction  = getFunctionName(node.getEnclosingFunction());
+		}
+		//System.out.println("enclosingFunction: " + enclosingFunction);
+
+		boolean covered = false;
+		if (coveredFunctionsIndices.contains(functionCounter)){
+			if (!coveredFunctions.contains(functionName))
+				coveredFunctions.add(functionName);
+			if (!coveredFunctionLines.contains(lineNumber))
+				coveredFunctionLines.add(lineNumber);
+			coveredFunctionsLoc.add(funcLocation);
+			System.out.println("======== Covered function at line" + (node.getLineno()+1) + " - Function name: " + functionName);
+			covered = true;
+		}else{
+			if (!missedFunctions.contains(functionName))
+				missedFunctions.add(functionName);
+			if (!missedFunctionLines.contains(lineNumber))
+				missedFunctionLines.add(lineNumber);
+			System.out.println("======== Missed function at line" + (node.getLineno()+1) + " - Function name: " + functionName);
+			//System.out.println("Missed function from line " + (f.getLineno()+1) + " to " + (f.getEndLineno()+1));
+			
+			// fill missedStatementInMissedFunction array with corresponding function index value
+			int missedStatementLinescounter = 0;
+			for (int i=0; i<missedStatementLines.size(); i++){
+				if (missedStatementLines.get(i) >= (f.getLineno()+1) && missedStatementLines.get(i) <= (f.getEndLineno()+1)){
+					missedStatementInMissedFunction.set(i, functionCounter);
+					//System.out.println("Missed statement line " + missedStatementLines.get(i) + " belongs to missed function " + functionCounter);
+					missedStatementLinescounter++;
+				}
+			}
+			//System.out.println("missedStatementLinescounter = " + missedStatementLinescounter);
+			//System.out.println("missedStatementLines.size() = " + missedStatementLines.size());
+			//System.out.println("Ratio of total missed statement lines = " + missedStatementLinescounter/missedStatementLines.size());
+
+		}
+		functionCounter++;
+
+
+		if (parentNodeName.equals("ParenthesizedExpression")){
+			//This is an immediately invoked function, just ignore it!
+		}else if (parentNodeName.equals("FunctionCall")){
+			FunctionCall parentNodeFunctionCall = (FunctionCall) parentNode;
+			AstNode targetNode = parentNodeFunctionCall.getTarget();
+			String targetSource = targetNode.toSource();
+			//System.out.println("targetSource: ++++++++" + targetSource);
+
+
+			// check for callback
+			boolean callbackFound = false;
+			for (AstNode n : parentNodeFunctionCall.getArguments()){
+				if (n.shortName().equals("FunctionNode") && getFunctionName((FunctionNode) n).equals(functionName)){
+					//System.out.println("Callback function passed as an argument to function " + targetSource);
+					if (isEventMethod(targetSource)){
+						if (covered)
+							System.out.println("Covered event-dependent callback at line " + (node.getLineno()+1)); // + " for function " + parentNode.toSource());
+						else
+							System.out.println("Missed event-dependent callback at line " + (node.getLineno()+1)); // + " for function " + parentNode.toSource());
+					}else if (isAsyncMethod(targetSource)){
+						if (covered)
+							System.out.println("Covered async callback at line " + (node.getLineno()+1)); // + " for function " + parentNode.toSource());
+						else
+							System.out.println("Missed async callback at line " + (node.getLineno()+1)); // + " for function " + parentNode.toSource());
+					}else{
+						if (covered)
+							System.out.println("Covered callback at line " + (node.getLineno()+1)); // + " for function " + parentNode.toSource());
+						else
+							System.out.println("Missed callback at line " + (node.getLineno()+1)); // + " for function " + parentNode.toSource());
+					}
+					callbackFound = true;
+					funcLocation = "callback";
+				}
+			}
+		}else if (parentNodeName.equals("Block")){
+
+			//System.out.println("enclosingFunction: " + enclosingFunction);
+
+			AstNode parentParentNode = parentNode.getParent();
+			String parentParentNodeSource = parentParentNode.toSource();
+			String parentParentNodeName = parentParentNode.shortName();
+			//System.out.println("shortName: " + shortName);
+			//System.out.println("parentParentNodeName: " + parentParentNodeName);
+
+
+			// this is a closure (nested function)
+			if (covered)
+				System.out.println("Covered function closure at line " + (node.getLineno()+1)); // + " for function " + parentNodeSource);
+			else
+				System.out.println("Missed function closure at line " + (node.getLineno()+1)); // + " for function " + parentNode.toSource());
+
+		}
+
+
+
+	}
+
+
+
+	private void analyzeFunctionCallNode(AstNode node) {
+
+		/**
+		 * A function call can be
+		 * 1) Regular: can be inside a function or global scope
+		 * 2) Callback function call: inside a function and the name of function is an argument of the enclosing function
+		 * 
+		 * some jquery callback receiving functions include each, on, etc.
+		 * 
+		 * Callbacks can be event-dependent, i.e., the enclosing function is an event function such as on() or click()
+		 * 
+		 * $.ajax({
+        		url:"http://fiddle.jshell.net/favicon.png",
+        		success:successCallback,
+        		complete:completeCallback,
+        		error:errorCallback
+    	   });
+		 * 
+		 * Callback function: sent as an argument of another function. Anonymous functions defined in the parameter of the containing function, is one of the common patterns for using callback functions. 
+		 * 
+		 */
+
+		FunctionCall fcall = (FunctionCall) node;
+		AstNode targetNode = fcall.getTarget(); // node evaluating to the function to call. E.g document.getElemenyById(x)
+		String targetSource = targetNode.toSource();
+		//System.out.println("Calling function " + targetSource);
+		//System.out.println("node.getLineno() : " + (node.getLineno()+1));
+
+		String enclosingFunction = "";
+		if (node.getEnclosingFunction()!=null){
+			enclosingFunction  = getFunctionName(node.getEnclosingFunction());
+			//System.out.println("enclosingFunction: " + enclosingFunction);
+		}
+
+		if (!targetSource.contains("{"))  // ignoring calls by immediately invoked functions
+			if (!functionCalls.contains(targetSource))
+				functionCalls.add(targetSource);
+
+		// check for callback and if it's an event-dependent callback
+		for (AstNode n : fcall.getArguments()){
+			if (n.shortName().equals("Name") && coveredFunctions.contains(n.toSource())){
+				if (isEventMethod(targetSource))
+					System.out.println("***** Covered function " + n.toSource() + " is an event-dependent callback at line " + (node.getLineno()+1) + " for named function " + targetSource);
+				else if (isAsyncMethod(targetSource))
+					System.out.println("***** Covered function " + n.toSource() + " is an async callback at line " + (node.getLineno()+1) + " for named function " + targetSource);
+				else
+					System.out.println("***** Covered function " + n.toSource() + " is a callback at line " + (node.getLineno()+1) + " for named function " + targetSource);
+			}else if (n.shortName().equals("Name") && missedFunctions.contains(n.toSource())){
+				if (isEventMethod(targetSource))
+					System.out.println("***** Missed function " + n.toSource() + " is an event-dependent callback at line " + (node.getLineno()+1) + " for named function " + targetSource);
+				else if (isAsyncMethod(targetSource))
+					System.out.println("***** Missed function " + n.toSource() + " is an async callback at line " + (node.getLineno()+1) + " for named function " + targetSource);
+				else
+					System.out.println("***** Missed function " + n.toSource() + " is a callback at line " + (node.getLineno()+1) + " for named function " + targetSource);
+			}
+		}
+
+	}
+
+	private void analyzeAssignmentNode(AstNode node) {
+		Assignment asmt = (Assignment) node;
+		String varName = asmt.getLeft().toSource();
+		//System.out.println(varName + " is set to: " + asmt.getRight().toSource());
+		// check for pattern  X.onclick = nameOfAFunction  or X.onclick = function()
+		if (isEventMethod(varName)){
+			if (asmt.getRight() instanceof FunctionNode){  // e.g X.onclick = function()
+				System.out.println("An event-dependent callback found at line " + (node.getLineno()+1));
+			}else if (coveredFunctions.contains(asmt.getRight().toSource())){
+				System.out.println("Covered event-dependent callback at line " + (node.getLineno()+1));
+			}else if (missedFunctions.contains(asmt.getRight().toSource())){
+				System.out.println("Missed event-dependent callback at line " + (node.getLineno()+1));
+			}
+			//System.out.println("Event-dependent callback function: " + asmt.toSource());
+		}
+
+	}
+
+
 
 
 	private void instrumentFunctionNode(AstNode node) {
@@ -178,10 +459,9 @@ public class JSASTInstrumentor implements NodeVisitor{
 		System.out.println("=== instrumentFunctionCallNode ===");
 		// getting the enclosing function name
 		String enclosingFunction = "";
-		if (node.getEnclosingFunction()!=null)
-			if (node.getEnclosingFunction().getFunctionName()!=null)
-				enclosingFunction = ((FunctionNode) node.getEnclosingFunction()).getFunctionName().getIdentifier();
-
+		if (node.getEnclosingFunction()!=null){
+			enclosingFunction  = getFunctionName(node.getEnclosingFunction());
+		}
 		System.out.println("enclosingFunction: " + enclosingFunction);
 
 		if (node.shortName().equals("NewExpression"))
@@ -213,16 +493,16 @@ public class JSASTInstrumentor implements NodeVisitor{
 
 		if (targetNode.toSource().equals("trigger") || targetNode.toSource().equals("triggerHandler"))
 			setTriggerCounetr(getTriggerCounetr() + 1);
-		
+
 		String[] assertionSkipList = { "assert.expect", "expect", "assert.equal", "equal", "assert.notEqual", "notEqual", "assert.deepEqual", "deepEqual", 
 				"assert.notDeepEqual", "notDeepEqual", "assert.strictEqual", "strictEqual", "assert.notStrictEqual", "notStrictEqual", "QUnit.ok", "assert.ok", "ok", "assert.notOk", "notOk", 
 				"assert.propEqual", "propEqual", "assert.notPropEqual", "notPropEqual", "assert.push", "assert.throws", "throws", "assert.async"};		
 
-		String[] otherSkipList = { "QUnit.module", "module", "QUnit.test", "test", "QUnit.asyncTest", "asyncTest", "jQuery", "$" };		
+		String[] otherSkipList = { "QUnit.module", "module", "QUnit.test", "test", "QUnit.asyncTest", "asyncTest", "jQuery", "$" , "start", "stop"}; // start/stop for asynchronous control	
 
 		if (ArrayUtils.contains( assertionSkipList, targetNode.toSource() ))
 			setAssertionCounter(getAssertionCounter() + 1);
-			
+
 		if (ArrayUtils.contains( assertionSkipList, targetNode.toSource() ) || ArrayUtils.contains( otherSkipList, targetNode.toSource() )) {
 			System.out.println("Not instrumenting " + targetNode.toSource());
 			return;
@@ -399,6 +679,151 @@ public class JSASTInstrumentor implements NodeVisitor{
 		this.triggerCounetr = triggerCounetr;
 	}
 
+	public boolean isInstrumentationEnable() {
+		return instrumentationEnable;
+	}
 
+	public void setInstrumentationEnable(boolean instrumentationEnable) {
+		this.instrumentationEnable = instrumentationEnable;
+	}
+
+	public void setCoverageInfo(ArrayList<Integer> coveredStatementLines, ArrayList<Integer> missedStatementLines, ArrayList<Integer> coveredFunctionsIndices, ArrayList<Integer> missedFunctionsIndices) {
+		this.coveredStatementLines = coveredStatementLines;
+		this.missedStatementLines = missedStatementLines;
+		this.coveredFunctionsIndices = coveredFunctionsIndices;
+		this.missedFunctionsIndices = missedFunctionsIndices;
+
+		for (int i=0; i< missedStatementLines.size(); i++)
+			missedStatementInMissedFunction.add(-1);
+
+	}
+
+	public int getFunctionCounter() {
+		return functionCounter;
+	}
+
+	public void setFunctionCounter(int functionCounter) {
+		this.functionCounter = functionCounter;
+	}
+
+	public void clearFunctionsList() {
+		coveredFunctions.clear();
+		missedFunctions.clear();
+	}
+
+	public boolean isEventMethod(String functionName){
+		/**
+		jQuery Event Methods
+		Event methods trigger or attach a function to an event handler for the selected elements.
+
+		bind() 	Attaches event handlers to elements
+		blur() 	Attaches/Triggers the blur event
+		change() 	Attaches/Triggers the change event
+		click() 	Attaches/Triggers the click event
+		dblclick() 	Attaches/Triggers the double click event
+		delegate() 	Attaches a handler to current, or future, specified child elements of the matching elements
+		error() 	Deprecated in version 1.8. Attaches/Triggers the error event
+		focus() 	Attaches/Triggers the focus event
+		focusin() 	Attaches an event handler to the focusin event
+		focusout() 	Attaches an event handler to the focusout event
+		hover() 	Attaches two event handlers to the hover event
+		keydown() 	Attaches/Triggers the keydown event
+		keypress() 	Attaches/Triggers the keypress event
+		keyup() 	Attaches/Triggers the keyup event
+		live() 	Removed in version 1.9. Adds one or more event handlers to current, or future, selected elements
+		load() 	Deprecated in version 1.8. Attaches an event handler to the load event
+		mousedown() 	Attaches/Triggers the mousedown event
+		mouseenter() 	Attaches/Triggers the mouseenter event
+		mouseleave() 	Attaches/Triggers the mouseleave event
+		mousemove() 	Attaches/Triggers the mousemove event
+		mouseout() 	Attaches/Triggers the mouseout event
+		mouseover() 	Attaches/Triggers the mouseover event
+		mouseup() 	Attaches/Triggers the mouseup event
+		on() 	Attaches event handlers to elements
+		one() 	Adds one or more event handlers to selected elements. This handler can only be triggered once per element
+		ready() 	Specifies a function to execute when the DOM is fully loaded
+		resize() 	Attaches/Triggers the resize event
+		scroll() 	Attaches/Triggers the scroll event
+		select() 	Attaches/Triggers the select event
+		submit() 	Attaches/Triggers the submit event
+		toggle() 	Removed in version 1.9. Attaches two or more functions to toggle between for the click event
+		trigger() 	Triggers all events bound to the selected elements
+		triggerHandler() 	Triggers all functions bound to a specified event for the selected elements
+		unload() 	Deprecated in version 1.8. Attaches an event handler to the unload event
+		 */
+
+		String[] eventMethods = { ".bind", ".blur", ".change", ".click", ".dblclick", ".delegate", ".error", ".focus", 
+				".focusin", ".focusout", ".hover", ".keydown", ".keypress", ".keyup", ".live", ".load", ".mousedown", ".mouseenter", ".mouseleave", ".mousemove",  
+				".mouseout", ".mouseover", ".mouseup", ".on", ".one", ".ready", ".resize", ".scroll", ".select", ".submit", ".toggle", ".trigger", ".triggerHandler", ".unload",
+
+				".addEventListener", ".attachEvent",
+
+				".onclick", ".oncontextmenu", ".ondblclick", ".onmousedown", ".onmouseenter", ".onmouseleave", ".onmousemove", ".onmouseover", ".onmouseout", ".onmouseup", 
+				".onabort", ".onbeforeunload", ".onerror", ".onhashchange", ".onload", ".onpageshow", ".onpagehide", ".onresize", ".onscroll", ".onunload", ".onblur", ".onchange", 
+				".onfocus", ".onfocusin", ".onfocusout", ".oninput", ".oninvalid", ".onreset", ".onsearch", ".onselect", ".onsubmit", ".ondrag", ".ondragend", ".ondragenter", ".ondragleave", 
+				".ondragover", ".ondragstart", ".ondrop", ".oncopy", ".oncut", ".onpaste", ".onerror", ".onmessage", ".onopen", ".ontouchcancel", ".ontouchend", ".ontouchmove", ".ontouchstart"
+		};		
+
+
+		for (String pattern: eventMethods)
+			if (functionName.endsWith(pattern))
+				return true;
+
+		return false;
+
+		/*
+		 * HTML DOM Events => http://www.w3schools.com/jsref/dom_obj_event.asp
+			".onclick", ".oncontextmenu", ".ondblclick", ".onmousedown", ".onmouseenter", ".onmouseleave", ".onmousemove", ".onmouseover", ".onmouseout", ".onmouseup", 
+			".onabort", ".onbeforeunload", ".onerror", ".onhashchange", ".onload", ".onpageshow", ".onpagehide", ".onresize", ".onscroll", ".onunload", ".onblur", ".onchange", 
+			".onfocus", ".onfocusin", ".onfocusout", ".oninput", ".oninvalid", ".onreset", ".onsearch", ".onselect", ".onsubmit", ".ondrag", ".ondragend", ".ondragenter", ".ondragleave", 
+			".ondragover", ".ondragstart", ".ondrop", ".oncopy", ".oncut", ".onpaste", ".onerror", ".onmessage", ".onopen", ".ontouchcancel", ".ontouchend", ".ontouchmove", ".ontouchstart"
+
+			 document.getElementById("myId").onclick = function(){alert("hello")};
+			 .onclick = function  => old version
+
+			 document.getElementById("myId").addEventListener("click", function(){alert("hello")},false);
+			 .addEventListener("click", modifyText, false); // in most non-IE browsers and IE9 => https://developer.mozilla.org/en-US/docs/Web/API/EventTarget/addEventListener
+			 .attachEvent (eventName, function);  // IE before version 9
+			 document.getElementById("myId").attachEvent("onclick", function(){alert("hello")});
+
+			 $(document).on('click', '[data-buttons=dropdown]', function(e) {...});		 
+			 .on("click", handler)  /  .on('click', [eventData], handler)  => https://api.jquery.com/click/
+			 .trigger("click")
+			 .bind("click", handler)  => https://api.jquery.com/bind/
+			 .delegate( selector, events, data, handler ) => https://api.jquery.com/delegate/
+			 .live( events, data, handler ) => https://api.jquery.com/live/
+			 .on( events, selector ,data, handler ) => https://api.jquery.com/on/
+			 .one( events, selector ,data, handler ) => https://api.jquery.com/one/
+			 .resize( [eventData ], handler ) => https://api.jquery.com/resize/
+			 .scroll( [eventData ], handler ) => https://api.jquery.com/scroll/
+			 .load( [eventData ], handler )  = .on( "load", handler )  =>  https://api.jquery.com/load-event/
+			 .keydown( [eventData ], handler )  = .on( "keydown", handler ) => https://api.jquery.com/keydown/
+			 .keypress( [eventData ], handler ) = .on( "keypress", handler ) => https://api.jquery.com/keypress/
+			 .keyup( [eventData ], handler ) = .on( "keyup", handler ) => https://api.jquery.com/keyup/
+			 .toggle( handler, handler [, handler ] ) => https://api.jquery.com/toggle-event/
+			 .mouseover( [eventData ], handler ) = .on( "mouseover", handler ) => https://api.jquery.com/mouseover/
+			 .mousemove( [eventData ], handler ) = .on( "mousemove", handler ) => https://api.jquery.com/mousemove/
+			 .mousedown( [eventData ], handler ) = .on( "mousedown", handler ) => https://api.jquery.com/mousedown/
+			 .click([eventData], handler) = .on( "click", handler ) => https://api.jquery.com/click/
+			 .dblclick( [eventData ], handler ) = .on( "dblclick", handler ) => https://api.jquery.com/dblclick/
+			 .hover( handlerInOut ) = .on( "mouseenter mouseleave", handlerInOut ) => https://api.jquery.com/hover/
+
+		 */
+	}
+
+	public boolean isAsyncMethod(String functionName){
+		/**
+		 	setTimeout(func, delay, [param1, param2, ...])
+			setInterval(func, delay[, param1, param2, ...])
+		 */
+
+		String[] asyncMethods = { "setImmediate", "setTimeout", "setInterval"};		
+
+		for (String am: asyncMethods)
+			if (functionName.equals(am))
+				return true;
+		return false;
+
+	}
 }
 

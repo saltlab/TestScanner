@@ -1,3 +1,4 @@
-#TestScanner
+TestDependencyAnalyzer
 ======
-Analyzing JavaScript Test Code
+
+TestDependencyAnalyzer is a tool to detect function dependencies in the written unit tests for JavaScript applications.
