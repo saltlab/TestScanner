@@ -22,11 +22,82 @@ import org.mozilla.javascript.ast.AstRoot;
 
 public class JSAnalyzer {
 
+
+	
+	
+	
+	private int coveredEventCallback = 0;
+	public int getCoveredEventCallback() {
+		return coveredEventCallback;
+	}
+
+	private int missedEventCallback = 0;
+	public int getMissedEventCallback() {
+		return missedEventCallback;
+	}
+
+	private int coveredAsyncCallback = 0;
+	public int getCoveredAsyncCallback() {
+		return coveredAsyncCallback;
+	}
+
+	private int missedAsyncCallback = 0;
+	public int getMissedAsyncCallback() {
+		return missedAsyncCallback;
+	}
+
+	private int coveredCallback = 0;
+	public int getCoveredCallback() {
+		return coveredCallback;
+	}
+
+	private int missedCallback = 0;
+	public int getMissedCallback() {
+		return missedCallback;
+	}
+
+	private int coveredClosure = 0;
+	public int getCoveredClosure() {
+		return coveredClosure;
+	}
+
+	private int missedClosure = 0;
+	public int getMissedClosure() {
+		return missedClosure;
+	}
+
+	private int coveredRegularFunc = 0;
+	public int getCoveredRegularFunc() {
+		return coveredRegularFunc;
+	}
+
+	private int missedRegularFunc = 0;
+	public int getMissedRegularFunc() {
+		return missedRegularFunc;
+	}
+
+	private int neverExecFunCallSites = 0;
+	public int getNeverExecFunCallSites() {
+		return neverExecFunCallSites;
+	}
+
+	private int totalMissedStatementLinesInMissedFunctionCounter = 0;
+	public int getTotalMissedStatementLinesInMissedFunctionCounter() {
+		return totalMissedStatementLinesInMissedFunctionCounter;
+	}
+
+	private int totalMissedStatementLines;
+	public int getTotalMissedStatementLines() {
+		return totalMissedStatementLines;
+	}
+		
+	
 	private List<String> excludeFilenamePatterns;
 
 	private JSASTInstrumentor astVisitor;
 	private String outputfolder;
 	private String jsAddress, scopeName;
+
 
 	public void setJSAddress(String jsAddress){
 		this.jsAddress = jsAddress;
@@ -271,7 +342,8 @@ public class JSAnalyzer {
 			System.out.println("MissedFunctions :" + astVisitor.getMissedFunctions());
 			//System.out.println("MissedFunctions.size() :" + astVisitor.getMissedFunctions().size());
 			System.out.println("MissedFunctionLines :" + astVisitor.getMissedFunctionLines());
-
+			
+			
 			astVisitor.setVisitOnly("FunctionCall");
 			ast.visit(astVisitor);
 
@@ -280,23 +352,55 @@ public class JSAnalyzer {
 			for (String functionCall : astVisitor.getFunctionCalls()){
 				if (functionCall.contains(".call") || functionCall.contains(".apply"))   // The call() and apply() methods calls a function with a given this value and arguments
 					functionCall = functionCall.replace(".call", "").replace(".apply", "");
-				if (astVisitor.getMissedFunctions().contains(functionCall))
+				if (astVisitor.getMissedFunctions().contains(functionCall)){
 					System.out.println("The call to function " + functionCall + " was never executed!");
+					neverExecFunCallSites++;
+				}
 			}
 
+			
+			
+			coveredRegularFunc = astVisitor.getCoveredRegularFunc();
+			missedRegularFunc = astVisitor.getMissedRegularFunc();
+			coveredCallback = astVisitor.getCoveredCallback();
+			missedCallback = astVisitor.getMissedCallback();
+			coveredAsyncCallback = astVisitor.getCoveredAsyncCallback();
+			missedAsyncCallback = astVisitor.getMissedAsyncCallback();
+			coveredEventCallback = astVisitor.getCoveredAsyncCallback();
+			missedEventCallback = astVisitor.getMissedEventCallback();
+			coveredClosure = astVisitor.getCoveredClosure();
+			missedClosure = astVisitor.getMissedClosure();
+
+			
+			System.out.println("++++ coveredRegularFunc: " + astVisitor.getCoveredRegularFunc());
+			System.out.println("++++ missedRegularFunc: " + astVisitor.getMissedRegularFunc());
+			System.out.println("++++ coveredCallback: " + astVisitor.getCoveredCallback());
+			System.out.println("++++ missedCallback: " + astVisitor.getMissedCallback());
+			System.out.println("++++ coveredAsyncCallback: " + astVisitor.getCoveredAsyncCallback());
+			System.out.println("++++ missedAsyncCallback: " + astVisitor.getMissedAsyncCallback());
+			System.out.println("++++ coveredEventCallback: " + astVisitor.getCoveredAsyncCallback());
+			System.out.println("++++ missedEventCallback: " + astVisitor.getMissedEventCallback());
+			System.out.println("++++ coveredClosure: " + astVisitor.getCoveredClosure());
+			System.out.println("++++ missedClosure: " + astVisitor.getMissedClosure());
+
+			System.out.println("++++ neverExecFunCallSites: " + neverExecFunCallSites);
+			
+			
 			ArrayList<Integer> msimf = astVisitor.getMissedStatementInMissedFunction();
-			System.out.println("msimf: " + msimf);
-			int totalMissedStatementLinesInMissedFunctionCounter = 0;
+			//System.out.println("msimf: " + msimf);
 			for (int i=0; i<msimf.size(); i++){
 				if (msimf.get(i) >= 0)
-					totalMissedStatementLinesInMissedFunctionCounter++;
+					totalMissedStatementLinesInMissedFunctionCounter ++;
 			}
+			
+			totalMissedStatementLines = astVisitor.getMissedStatementLines().size();
 
 			System.out.println("@ Total missed statement lines in missed functioncounter = " + totalMissedStatementLinesInMissedFunctionCounter);
-			System.out.println("@ Total number of missed statements = " + astVisitor.getMissedStatementLines().size());
-			float ratio = (float)totalMissedStatementLinesInMissedFunctionCounter/(float)astVisitor.getMissedStatementLines().size();
-			if (astVisitor.getMissedStatementLines().size()!=0)
-				System.out.println("@ Ratio of total missed statement lines = " + ratio);
+			System.out.println("@ Total number of missed statements = " + totalMissedStatementLines);
+			if (totalMissedStatementLines!=0){
+				float ratio = (float)totalMissedStatementLinesInMissedFunctionCounter/(float)totalMissedStatementLines;
+				System.out.println("@ Percentage of missed statement in missed functions = " + ratio*100 + "%");
+			}
 
 
 			/*

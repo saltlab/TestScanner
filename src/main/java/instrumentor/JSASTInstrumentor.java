@@ -91,6 +91,57 @@ public class JSASTInstrumentor implements NodeVisitor{
 
 	private String visitOnly = "";
 
+	private int coveredEventCallback = 0;
+	public int getCoveredEventCallback() {
+		return coveredEventCallback;
+	}
+
+	private int missedEventCallback = 0;
+	public int getMissedEventCallback() {
+		return missedEventCallback;
+	}
+
+	private int coveredAsyncCallback = 0;
+	public int getCoveredAsyncCallback() {
+		return coveredAsyncCallback;
+	}
+
+	private int missedAsyncCallback = 0;
+	public int getMissedAsyncCallback() {
+		return missedAsyncCallback;
+	}
+
+	private int coveredCallback = 0;
+	public int getCoveredCallback() {
+		return coveredCallback;
+	}
+
+	private int missedCallback = 0;
+	public int getMissedCallback() {
+		return missedCallback;
+	}
+
+	private int coveredClosure = 0;
+	public int getCoveredClosure() {
+		return coveredClosure;
+	}
+
+	private int missedClosure = 0;
+	public int getMissedClosure() {
+		return missedClosure;
+	}
+
+	private int coveredRegularFunc = 0;
+	public int getCoveredRegularFunc() {
+		return coveredRegularFunc;
+	}
+
+	private int missedRegularFunc = 0;
+	public int getMissedRegularFunc() {
+		return missedRegularFunc;
+	}
+
+	
 	public void setVisitOnly(String visitOnly){
 		this.visitOnly = visitOnly;
 	}
@@ -291,6 +342,7 @@ public class JSASTInstrumentor implements NodeVisitor{
 
 
 		if (parentNodeName.equals("ParenthesizedExpression")){
+			System.out.println("This is an immediately invoked function, just ignore it!");
 			//This is an immediately invoked function, just ignore it!
 		}else if (parentNodeName.equals("FunctionCall")){
 			FunctionCall parentNodeFunctionCall = (FunctionCall) parentNode;
@@ -305,20 +357,29 @@ public class JSASTInstrumentor implements NodeVisitor{
 				if (n.shortName().equals("FunctionNode") && getFunctionName((FunctionNode) n).equals(functionName)){
 					//System.out.println("Callback function passed as an argument to function " + targetSource);
 					if (isEventMethod(targetSource)){
-						if (covered)
+						if (covered){
 							System.out.println("Covered event-dependent callback at line " + (node.getLineno()+1)); // + " for function " + parentNode.toSource());
-						else
+							coveredEventCallback++;
+						}else{
 							System.out.println("Missed event-dependent callback at line " + (node.getLineno()+1)); // + " for function " + parentNode.toSource());
+							missedEventCallback++;
+						}
 					}else if (isAsyncMethod(targetSource)){
-						if (covered)
+						if (covered){
 							System.out.println("Covered async callback at line " + (node.getLineno()+1)); // + " for function " + parentNode.toSource());
-						else
+							coveredAsyncCallback++;
+						}else{
 							System.out.println("Missed async callback at line " + (node.getLineno()+1)); // + " for function " + parentNode.toSource());
+							missedAsyncCallback++;
+						}
 					}else{
-						if (covered)
+						if (covered){
 							System.out.println("Covered callback at line " + (node.getLineno()+1)); // + " for function " + parentNode.toSource());
-						else
+							coveredCallback++;
+						}else{
 							System.out.println("Missed callback at line " + (node.getLineno()+1)); // + " for function " + parentNode.toSource());
+							missedCallback++;
+						}
 					}
 					callbackFound = true;
 					funcLocation = "callback";
@@ -336,11 +397,23 @@ public class JSASTInstrumentor implements NodeVisitor{
 
 
 			// this is a closure (nested function)
-			if (covered)
+			if (covered){
 				System.out.println("Covered function closure at line " + (node.getLineno()+1)); // + " for function " + parentNodeSource);
-			else
+				coveredClosure++;
+			}else{
 				System.out.println("Missed function closure at line " + (node.getLineno()+1)); // + " for function " + parentNode.toSource());
+				missedClosure++;
+			}
 
+		}else{
+			// this is a regular function
+			if (covered){
+				System.out.println("Covered regular function at line " + (node.getLineno()+1)); // + " for function " + parentNodeSource);
+				coveredRegularFunc++;
+			}else{
+				System.out.println("Missed regular function at line " + (node.getLineno()+1)); // + " for function " + parentNode.toSource());
+				missedRegularFunc++;
+			}
 		}
 
 
@@ -390,19 +463,27 @@ public class JSASTInstrumentor implements NodeVisitor{
 		// check for callback and if it's an event-dependent callback
 		for (AstNode n : fcall.getArguments()){
 			if (n.shortName().equals("Name") && coveredFunctions.contains(n.toSource())){
-				if (isEventMethod(targetSource))
+				if (isEventMethod(targetSource)){
 					System.out.println("***** Covered function " + n.toSource() + " is an event-dependent callback at line " + (node.getLineno()+1) + " for named function " + targetSource);
-				else if (isAsyncMethod(targetSource))
+					coveredEventCallback++;
+				}else if (isAsyncMethod(targetSource)){
 					System.out.println("***** Covered function " + n.toSource() + " is an async callback at line " + (node.getLineno()+1) + " for named function " + targetSource);
-				else
+					coveredAsyncCallback++;
+				}else{
 					System.out.println("***** Covered function " + n.toSource() + " is a callback at line " + (node.getLineno()+1) + " for named function " + targetSource);
+					coveredCallback++;
+				}
 			}else if (n.shortName().equals("Name") && missedFunctions.contains(n.toSource())){
-				if (isEventMethod(targetSource))
+				if (isEventMethod(targetSource)){
 					System.out.println("***** Missed function " + n.toSource() + " is an event-dependent callback at line " + (node.getLineno()+1) + " for named function " + targetSource);
-				else if (isAsyncMethod(targetSource))
+					missedEventCallback++;
+				}else if (isAsyncMethod(targetSource)){
 					System.out.println("***** Missed function " + n.toSource() + " is an async callback at line " + (node.getLineno()+1) + " for named function " + targetSource);
-				else
+					missedAsyncCallback++;
+				}else{
 					System.out.println("***** Missed function " + n.toSource() + " is a callback at line " + (node.getLineno()+1) + " for named function " + targetSource);
+					missedCallback++;
+				}
 			}
 		}
 
@@ -416,10 +497,13 @@ public class JSASTInstrumentor implements NodeVisitor{
 		if (isEventMethod(varName)){
 			if (asmt.getRight() instanceof FunctionNode){  // e.g X.onclick = function()
 				System.out.println("An event-dependent callback found at line " + (node.getLineno()+1));
+				missedEventCallback++;
 			}else if (coveredFunctions.contains(asmt.getRight().toSource())){
 				System.out.println("Covered event-dependent callback at line " + (node.getLineno()+1));
+				coveredEventCallback++;
 			}else if (missedFunctions.contains(asmt.getRight().toSource())){
 				System.out.println("Missed event-dependent callback at line " + (node.getLineno()+1));
+				missedEventCallback++;
 			}
 			//System.out.println("Event-dependent callback function: " + asmt.toSource());
 		}
@@ -816,6 +900,8 @@ public class JSASTInstrumentor implements NodeVisitor{
 		 	setTimeout(func, delay, [param1, param2, ...])
 			setInterval(func, delay[, param1, param2, ...])
 		 */
+		
+		// TODO: XHR and others from Keheliya's paper
 
 		String[] asyncMethods = { "setImmediate", "setTimeout", "setInterval"};		
 
