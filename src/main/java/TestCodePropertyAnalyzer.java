@@ -3,6 +3,7 @@ import instrumentor.JSASTInstrumentor;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -25,7 +26,7 @@ import com.google.common.collect.HashMultimap;
 import core.JSAnalyzer;
 import core.TraceAnalyzer;
 
-public class FunCallCalculator {
+public class TestCodePropertyAnalyzer {
 
 	private static String testsFolder = "/Users/aminmf/Documents/JavaScriptTestsStudy/popularJS/jquery-mobile/tests/";
 	private static String[] excludeFolders = { "casperjs"};		
@@ -51,7 +52,7 @@ public class FunCallCalculator {
 			processFile(file);
 		}
 
-
+		
 		/*
 		// Collect execution traces
 		ArrayList traceList = null;
@@ -84,10 +85,10 @@ public class FunCallCalculator {
 		if (functionCallsMultiMap.keySet().size()!=0) 
 			System.out.println("aveUniqueFunCalls: " + numUniqueFunCalls/functionCallsMultiMap.keySet().size());
 		System.out.println("maxUniqueFunCalls: " + maxUniqueFunCalls);
-		 */
+		*/
 	}
 
-	private static void processFile(File file) {
+	private static void processFile(File file) throws IOException, Exception {
 		if (ArrayUtils.contains(excludeFolders, file.getName())){
 			System.out.println("*** Analysis excluded for: " + file.getName());
 			return;
@@ -118,10 +119,67 @@ public class FunCallCalculator {
 				// calc fun calls
 
 				//codeAnalyzer.instrumentJavaScript();
+				analyseJSTestFile(file.getCanonicalPath());
+
 			}
 		}
 		
 	}
+	
+	
+	private static void analyseJSTestFile(String canonicalPath) throws Exception {
+		File jsFile = new File(canonicalPath);
+		String fileName = jsFile.getName();
+
+		System.out.println(canonicalPath);
+		codeAnalyzer.setJSFileName(fileName);
+		codeAnalyzer.setJSAddress(canonicalPath);
+		codeAnalyzer.analyzeTestCodeProperties();
+
+		asyncFuncs += codeAnalyzer.getAsyncFunc();
+		missedRegularFunc += codeAnalyzer.getMissedRegularFunc();
+		coveredCallback += codeAnalyzer.getCoveredCallback();
+		missedCallback += codeAnalyzer.getMissedCallback();
+		coveredAsyncCallback += codeAnalyzer.getCoveredAsyncCallback();
+		missedAsyncCallback += codeAnalyzer.getMissedAsyncCallback();
+		coveredEventCallback += codeAnalyzer.getCoveredAsyncCallback();
+		missedEventCallback += codeAnalyzer.getMissedEventCallback();
+		coveredClosure += codeAnalyzer.getCoveredClosure();
+		missedClosure += codeAnalyzer.getMissedClosure();
+		neverExecFunCallSites +=  codeAnalyzer.getNeverExecFunCallSites();
+		totalMissedStatementLinesInMissedFunctionCounter += codeAnalyzer.getTotalMissedStatementLinesInMissedFunctionCounter();
+		totalMissedStatementLines += codeAnalyzer.getTotalMissedStatementLines();
+		
+		
+		System.out.println("==========================");
+		System.out.println("++++ coveredRegularFunc: " + coveredRegularFunc);
+		System.out.println("++++ missedRegularFunc: " + missedRegularFunc);
+		System.out.println("++++ coveredCallback: " + coveredCallback);
+		System.out.println("++++ missedCallback: " + missedCallback);
+		System.out.println("++++ coveredAsyncCallback: " + coveredAsyncCallback);
+		System.out.println("++++ missedAsyncCallback: " + missedAsyncCallback);
+		System.out.println("++++ coveredEventCallback: " + coveredEventCallback);
+		System.out.println("++++ missedEventCallback: " + missedEventCallback);
+		System.out.println("++++ coveredClosure: " + coveredClosure);
+		System.out.println("++++ missedClosure: " + missedClosure);
+		System.out.println("++++ neverExecFunCallSites: " + neverExecFunCallSites);
+		
+		float ratio = 0;
+		System.out.println("@ Total missed statement lines in missed functioncounter = " + totalMissedStatementLinesInMissedFunctionCounter);
+		System.out.println("@ Total number of missed statements = " + totalMissedStatementLines);
+		if (totalMissedStatementLinesInMissedFunctionCounter!=0){
+			ratio = (float)totalMissedStatementLinesInMissedFunctionCounter/(float)totalMissedStatementLines;
+			System.out.println("@ Percentage of missed statement in missed functions = " + ratio*100 + "%");
+		}
+
+		System.out.println("==========================");
+		System.out.println(coveredRegularFunc + "\t" + missedRegularFunc + "\t" + coveredCallback + "\t" + missedCallback + "\t" + coveredAsyncCallback + "\t" +
+		missedAsyncCallback + "\t" + coveredEventCallback + "\t" + missedEventCallback + "\t" + coveredClosure + "\t" + missedClosure + "\t" + neverExecFunCallSites + "\t" + ratio*100 + "%");
+		System.out.println("==========================");
+		
+	}
+
+	
 }
 
 

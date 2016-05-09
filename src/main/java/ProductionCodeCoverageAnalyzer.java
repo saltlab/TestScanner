@@ -35,7 +35,7 @@ import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 
 
-public class CoverageReportAnalyzer {
+public class ProductionCodeCoverageAnalyzer {
 
 	//private static String subjectCoverageFolder = "ButtonsCoverageReport";
 	//private static String subjectCoverageFolder = "jquery-placeholderCoverageReport";
@@ -161,7 +161,7 @@ public class CoverageReportAnalyzer {
 		System.out.println(canonicalPath);
 		codeAnalyzer.setJSFileName(fileName);
 		codeAnalyzer.setJSAddress(canonicalPath);
-		codeAnalyzer.analyze(coveredStatementLines, missedStatementLines, coveredFunctionsIndices, missedFunctionsIndices);
+		codeAnalyzer.analyzeProductionCodeCoverage(coveredStatementLines, missedStatementLines, coveredFunctionsIndices, missedFunctionsIndices);
 
 		coveredRegularFunc += codeAnalyzer.getCoveredRegularFunc();
 		missedRegularFunc += codeAnalyzer.getMissedRegularFunc();

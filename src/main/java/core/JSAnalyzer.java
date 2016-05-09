@@ -298,7 +298,7 @@ public class JSAnalyzer {
 	}
 
 
-	public void analyze(ArrayList<Integer> coveredLines, ArrayList<Integer> missedLines, ArrayList<Integer> coveredFunctionsIndices, ArrayList<Integer> missedFunctionsIndices) throws Exception {
+	public void analyzeProductionCodeCoverage(ArrayList<Integer> coveredLines, ArrayList<Integer> missedLines, ArrayList<Integer> coveredFunctionsIndices, ArrayList<Integer> missedFunctionsIndices) throws Exception {
 
 		astVisitor.setInstrumentationEnable(false);
 		astVisitor.setFunctionCounter(0); // resetting the index of visited Function nodes for annotating covered functions
@@ -426,6 +426,10 @@ public class JSAnalyzer {
 
 		astVisitor.setInstrumentationEnable(true);
 
+	}
+
+	public void analyzeTestCodeProperties() {
+		System.out.println("===== analyzeTestCodeProperties ====");		
 	}
 
 }

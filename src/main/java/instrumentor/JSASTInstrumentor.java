@@ -270,14 +270,14 @@ public class JSASTInstrumentor implements NodeVisitor{
 			else if (node instanceof FunctionNode)
 				instrumentFunctionNode(node);
 		}else{
-			if (visitOnly .equals("FunctionNode")){
+			if (visitOnly.equals("FunctionNode")){
 				if (node instanceof FunctionNode)
-					analyzeFunctionNode(node);
+					analyzeProductionCodeFunctionNode(node);
 			}else{
 				if (node instanceof FunctionCall)
-					analyzeFunctionCallNode(node);
+					analyzeProductionCodeFunctionCallNode(node);
 				else if (node instanceof Assignment)
-					analyzeAssignmentNode(node);
+					analyzeProductionCodeAssignmentNode(node);
 			}
 		}
 
@@ -286,7 +286,7 @@ public class JSASTInstrumentor implements NodeVisitor{
 	}
 
 
-	private void analyzeFunctionNode(AstNode node) {
+	private void analyzeProductionCodeFunctionNode(AstNode node) {
 		FunctionNode f = (FunctionNode) node;
 		int numOfParam = f.getParams().size();
 		int lineNumber = node.getLineno()+1;
@@ -422,7 +422,7 @@ public class JSASTInstrumentor implements NodeVisitor{
 
 
 
-	private void analyzeFunctionCallNode(AstNode node) {
+	private void analyzeProductionCodeFunctionCallNode(AstNode node) {
 
 		/**
 		 * A function call can be
@@ -489,7 +489,7 @@ public class JSASTInstrumentor implements NodeVisitor{
 
 	}
 
-	private void analyzeAssignmentNode(AstNode node) {
+	private void analyzeProductionCodeAssignmentNode(AstNode node) {
 		Assignment asmt = (Assignment) node;
 		String varName = asmt.getLeft().toSource();
 		//System.out.println(varName + " is set to: " + asmt.getRight().toSource());
