@@ -127,7 +127,18 @@ public class TestCodePropertyAnalyzer {
 	}
 	
 	
+
 	private static void analyseJSTestFile(String canonicalPath) throws Exception {
+		/*
+	 	NumTests: Number of tests
+		NumAsyncTests: Number of async tests
+		NumAssertions: Number of assertions
+		MaxFunCall: Maximum number of unique function calls per test
+		AveFunCall: Average number of unique function calls per test
+		NumDOMFixture: Number of DOM fixtures in the test suite
+		NumTriggerTest: Number of tests with event triggering methods
+		NumObjCreate: Number of objects creation in the test suite
+		*/
 		File jsFile = new File(canonicalPath);
 		String fileName = jsFile.getName();
 
@@ -136,45 +147,25 @@ public class TestCodePropertyAnalyzer {
 		codeAnalyzer.setJSAddress(canonicalPath);
 		codeAnalyzer.analyzeTestCodeProperties();
 
-		asyncFuncs += codeAnalyzer.getAsyncFunc();
-		missedRegularFunc += codeAnalyzer.getMissedRegularFunc();
-		coveredCallback += codeAnalyzer.getCoveredCallback();
-		missedCallback += codeAnalyzer.getMissedCallback();
-		coveredAsyncCallback += codeAnalyzer.getCoveredAsyncCallback();
-		missedAsyncCallback += codeAnalyzer.getMissedAsyncCallback();
-		coveredEventCallback += codeAnalyzer.getCoveredAsyncCallback();
-		missedEventCallback += codeAnalyzer.getMissedEventCallback();
-		coveredClosure += codeAnalyzer.getCoveredClosure();
-		missedClosure += codeAnalyzer.getMissedClosure();
-		neverExecFunCallSites +=  codeAnalyzer.getNeverExecFunCallSites();
-		totalMissedStatementLinesInMissedFunctionCounter += codeAnalyzer.getTotalMissedStatementLinesInMissedFunctionCounter();
-		totalMissedStatementLines += codeAnalyzer.getTotalMissedStatementLines();
+		NumTests += codeAnalyzer.getNumTests();
+		NumAsyncTests += codeAnalyzer.getNumAsyncTests();
+		NumAssertions += codeAnalyzer.getNumAssertions();
+		MaxFunCall += codeAnalyzer.getMaxFunCall();
+		AveFunCall += codeAnalyzer.getAveFunCall();
+		NumDOMFixture += codeAnalyzer.getNumDOMFixture();
+		NumTriggerTest += codeAnalyzer.getNumTriggerTest();
+		NumObjCreate += codeAnalyzer.getNumObjCreate();
 		
 		
 		System.out.println("==========================");
-		System.out.println("++++ coveredRegularFunc: " + coveredRegularFunc);
-		System.out.println("++++ missedRegularFunc: " + missedRegularFunc);
-		System.out.println("++++ coveredCallback: " + coveredCallback);
-		System.out.println("++++ missedCallback: " + missedCallback);
-		System.out.println("++++ coveredAsyncCallback: " + coveredAsyncCallback);
-		System.out.println("++++ missedAsyncCallback: " + missedAsyncCallback);
-		System.out.println("++++ coveredEventCallback: " + coveredEventCallback);
-		System.out.println("++++ missedEventCallback: " + missedEventCallback);
-		System.out.println("++++ coveredClosure: " + coveredClosure);
-		System.out.println("++++ missedClosure: " + missedClosure);
-		System.out.println("++++ neverExecFunCallSites: " + neverExecFunCallSites);
-		
-		float ratio = 0;
-		System.out.println("@ Total missed statement lines in missed functioncounter = " + totalMissedStatementLinesInMissedFunctionCounter);
-		System.out.println("@ Total number of missed statements = " + totalMissedStatementLines);
-		if (totalMissedStatementLinesInMissedFunctionCounter!=0){
-			ratio = (float)totalMissedStatementLinesInMissedFunctionCounter/(float)totalMissedStatementLines;
-			System.out.println("@ Percentage of missed statement in missed functions = " + ratio*100 + "%");
-		}
-
-		System.out.println("==========================");
-		System.out.println(coveredRegularFunc + "\t" + missedRegularFunc + "\t" + coveredCallback + "\t" + missedCallback + "\t" + coveredAsyncCallback + "\t" +
-		missedAsyncCallback + "\t" + coveredEventCallback + "\t" + missedEventCallback + "\t" + coveredClosure + "\t" + missedClosure + "\t" + neverExecFunCallSites + "\t" + ratio*100 + "%");
+		System.out.println("++++ NumTests: " + NumTests);
+		System.out.println("++++ NumAsyncTests: " + NumAsyncTests);
+		System.out.println("++++ NumAssertions: " + NumAssertions);
+		System.out.println("++++ MaxFunCall: " + MaxFunCall);
+		System.out.println("++++ AveFunCall: " + AveFunCall);
+		System.out.println("++++ NumDOMFixture: " + NumDOMFixture);
+		System.out.println("++++ NumTriggerTest: " + NumTriggerTest);
+		System.out.println("++++ NumObjCreate: " + NumObjCreate);
 		System.out.println("==========================");
 		
 	}
