@@ -2,7 +2,7 @@ import java.io.File;
 import java.nio.file.FileSystems;
 import java.nio.file.Path;
 
-public class jsonPackageCounter {
+public class jsonPackageDetector {
 
 	private static String mainFolder = "/Applications/MAMP/htdocs/testAnalysisProject/Roguelike";
 	private static String appFolder = "/Applications/MAMP/htdocs/testAnalysisProject/Roguelike";
