@@ -4,6 +4,7 @@ import instrumentor.JSASTInstrumentor;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -21,10 +22,15 @@ import org.mozilla.javascript.ast.AstRoot;
 
 
 public class JSAnalyzer {
-
-
 	
-	
+	private static int NumTests = 0;
+	private static int NumAsyncTests = 0;
+	private static int NumAssertions = 0;
+	private static int MaxFunCall = 0;
+	private static float AveFunCall = 0;
+	private static int NumDOMFixture = 0;
+	private static int NumTriggerTest = 0;
+	private static int NumObjCreate = 0;
 	
 	private int coveredEventCallback = 0;
 	public int getCoveredEventCallback() {
@@ -300,7 +306,7 @@ public class JSAnalyzer {
 
 	public void analyzeProductionCodeCoverage(ArrayList<Integer> coveredLines, ArrayList<Integer> missedLines, ArrayList<Integer> coveredFunctionsIndices, ArrayList<Integer> missedFunctionsIndices) throws Exception {
 
-		astVisitor.setInstrumentationEnable(false);
+		astVisitor.setVisitType("AnalyzeProductionCode");
 		astVisitor.setFunctionCounter(0); // resetting the index of visited Function nodes for annotating covered functions
 		astVisitor.clearFunctionsList(); // clearing list of covered and missed function from previous visit
 
@@ -423,13 +429,165 @@ public class JSAnalyzer {
 		}
 
 		//System.out.println("Here is the corresponding buffer: \n" + input + "\n");
-
-		astVisitor.setInstrumentationEnable(true);
-
+		
+		astVisitor.setVisitType("");
 	}
 
-	public void analyzeTestCodeProperties() {
+	public void analyzeTestCodeProperties() throws Exception {
 		System.out.println("===== analyzeTestCodeProperties ====");		
+
+		astVisitor.setVisitType("AnalyzeTestCode");
+
+		// reading js form the input file
+		String input = "";
+		FileInputStream inputStream = new FileInputStream(jsAddress);
+		try {
+			input = IOUtils.toString(inputStream);
+		} finally {
+			inputStream.close();
+		}	    
+
+		try {
+			AstRoot ast = null;	
+			/* initialize JavaScript context */
+			Context cx = Context.enter();
+			/* create a new parser */
+			Parser rhinoParser = new Parser(new CompilerEnvirons(), cx.getErrorReporter());
+			/* parse some script and save it in AST */
+			ast = rhinoParser.parse(new String(input), scopeName, 0);
+
+			//System.out.println("************** AST ******************");
+			//System.out.println(ast.toSource());
+			//System.out.println(ast.debugPrint());
+			//writeJSToFile(scopename, input);
+			//writeFunctionsToFile(input);
+			//System.out.println("AST BEFORE : ");
+			//System.out.println(ast.toSource());
+
+			astVisitor.setScopeName(scopeName);
+			/* recurse through AST */
+			astVisitor.setVisitOnly("FunctionNode");
+			ast.visit(astVisitor);
+
+			System.out.println("CoveredFunctions :" + astVisitor.getCoveredFunctions());
+			//System.out.println("CoveredFunctions.size() :" + astVisitor.getCoveredFunctions().size());
+			System.out.println("CoveredFunctionLines :" + astVisitor.getCoveredFunctionLines());
+			System.out.println("MissedFunctions :" + astVisitor.getMissedFunctions());
+			//System.out.println("MissedFunctions.size() :" + astVisitor.getMissedFunctions().size());
+			System.out.println("MissedFunctionLines :" + astVisitor.getMissedFunctionLines());
+			
+			
+			astVisitor.setVisitOnly("FunctionCall");
+			ast.visit(astVisitor);
+
+			System.out.println("FunctionCalls :" + astVisitor.getFunctionCalls());
+
+			for (String functionCall : astVisitor.getFunctionCalls()){
+				if (functionCall.contains(".call") || functionCall.contains(".apply"))   // The call() and apply() methods calls a function with a given this value and arguments
+					functionCall = functionCall.replace(".call", "").replace(".apply", "");
+				if (astVisitor.getMissedFunctions().contains(functionCall)){
+					System.out.println("The call to function " + functionCall + " was never executed!");
+					neverExecFunCallSites++;
+				}
+			}
+
+		
+			coveredRegularFunc = astVisitor.getCoveredRegularFunc();
+			missedRegularFunc = astVisitor.getMissedRegularFunc();
+			coveredCallback = astVisitor.getCoveredCallback();
+			missedCallback = astVisitor.getMissedCallback();
+			coveredAsyncCallback = astVisitor.getCoveredAsyncCallback();
+			missedAsyncCallback = astVisitor.getMissedAsyncCallback();
+			coveredEventCallback = astVisitor.getCoveredAsyncCallback();
+			missedEventCallback = astVisitor.getMissedEventCallback();
+			coveredClosure = astVisitor.getCoveredClosure();
+			missedClosure = astVisitor.getMissedClosure();
+
+			
+			System.out.println("++++ coveredRegularFunc: " + astVisitor.getCoveredRegularFunc());
+			System.out.println("++++ missedRegularFunc: " + astVisitor.getMissedRegularFunc());
+			System.out.println("++++ coveredCallback: " + astVisitor.getCoveredCallback());
+			System.out.println("++++ missedCallback: " + astVisitor.getMissedCallback());
+			System.out.println("++++ coveredAsyncCallback: " + astVisitor.getCoveredAsyncCallback());
+			System.out.println("++++ missedAsyncCallback: " + astVisitor.getMissedAsyncCallback());
+			System.out.println("++++ coveredEventCallback: " + astVisitor.getCoveredAsyncCallback());
+			System.out.println("++++ missedEventCallback: " + astVisitor.getMissedEventCallback());
+			System.out.println("++++ coveredClosure: " + astVisitor.getCoveredClosure());
+			System.out.println("++++ missedClosure: " + astVisitor.getMissedClosure());
+
+			System.out.println("++++ neverExecFunCallSites: " + neverExecFunCallSites);
+			
+			
+			ArrayList<Integer> msimf = astVisitor.getMissedStatementInMissedFunction();
+			//System.out.println("msimf: " + msimf);
+			for (int i=0; i<msimf.size(); i++){
+				if (msimf.get(i) >= 0)
+					totalMissedStatementLinesInMissedFunctionCounter ++;
+			}
+			
+			totalMissedStatementLines = astVisitor.getMissedStatementLines().size();
+
+			System.out.println("@ Total missed statement lines in missed functioncounter = " + totalMissedStatementLinesInMissedFunctionCounter);
+			System.out.println("@ Total number of missed statements = " + totalMissedStatementLines);
+			if (totalMissedStatementLines!=0){
+				float ratio = (float)totalMissedStatementLinesInMissedFunctionCounter/(float)totalMissedStatementLines;
+				System.out.println("@ Percentage of missed statement in missed functions = " + ratio*100 + "%");
+			}
+
+
+			/*
+			System.out.println("assertionCounter: " + astVisitor.getAssertionCounter());
+			System.out.println("newExpressionCounter: " + astVisitor.getNewExpressionCounter());
+			System.out.println("testCounter: " + astVisitor.getTestCounter());
+			System.out.println("asynchTestCounter: " + astVisitor.getAsynchTestCounter());
+			System.out.println("trieggerCounter: " + astVisitor.getTriggerCounetr());
+			 */
+
+			/* clean up */
+			Context.exit();
+		} catch (RhinoException re) {
+			System.err.println(re.getMessage());
+			System.out.println("Unable to instrument. This might be a JSON response sent"
+					+ " with the wrong Content-Type or a syntax error.");
+		} catch (IllegalArgumentException iae) {
+
+			System.out.println("Invalid operator exception catched. Not instrumenting code.");
+		}
+
+		//System.out.println("Here is the corresponding buffer: \n" + input + "\n");
+		astVisitor.setVisitType("");
+	}
+
+	public int getNumTests() {
+		return NumTests;
+	}
+
+	public int getNumAsyncTests() {
+		return NumAsyncTests;
+	}
+
+	public int getNumAssertions() {
+		return NumAssertions;
+	}
+
+	public int getMaxFunCall() {
+		return MaxFunCall;
+	}
+
+	public float getAveFunCall() {
+		return AveFunCall;
+	}
+
+	public int getNumDOMFixture() {
+		return NumDOMFixture;
+	}
+
+	public int getNumTriggerTest() {
+		return NumTriggerTest;
+	}
+
+	public int getNumObjCreate() {
+		return NumObjCreate;
 	}
 
 }

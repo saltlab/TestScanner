@@ -26,7 +26,7 @@ import org.mozilla.javascript.ast.ObjectProperty;
 
 public class JSASTInstrumentor implements NodeVisitor{
 
-	private boolean instrumentationEnable = true;
+	private String visitType = "";  // {"InstrumentTestCode", "AnalyzeProductionCode", "AnalyzeTestCode"}
 
 	private int instrumentedLinesCounter = 0;
 
@@ -137,6 +137,7 @@ public class JSASTInstrumentor implements NodeVisitor{
 	}
 
 	private int missedRegularFunc = 0;
+	
 	public int getMissedRegularFunc() {
 		return missedRegularFunc;
 	}
@@ -262,14 +263,16 @@ public class JSASTInstrumentor implements NodeVisitor{
 			//System.out.println("node.debugPrint() : \n" + node.debugPrint());
 		}
 
-		if (instrumentationEnable==true){
+
+		// {"InstrumentTestCode", "AnalyzeProductionCode", "AnalyzeTestCode"}
+		if (visitType.equals("InstrumentTestCode")){
 			if (node instanceof NewExpression)
 				newExpressionCounter++;
 			else if (node instanceof FunctionCall)
 				instrumentFunctionCallNode(node);
 			else if (node instanceof FunctionNode)
 				instrumentFunctionNode(node);
-		}else{
+		}else if (visitType.equals("AnalyzeProductionCode")){
 			if (visitOnly.equals("FunctionNode")){
 				if (node instanceof FunctionNode)
 					analyzeProductionCodeFunctionNode(node);
@@ -279,6 +282,11 @@ public class JSASTInstrumentor implements NodeVisitor{
 				else if (node instanceof Assignment)
 					analyzeProductionCodeAssignmentNode(node);
 			}
+		}else if (visitType.equals("AnalyzeTestCode")){
+
+			
+		}else{
+			System.out.println("visitType is not set!");
 		}
 
 		/* have a look at the children of this node */
@@ -539,6 +547,65 @@ public class JSASTInstrumentor implements NodeVisitor{
 
 	}
 
+	
+	
+	
+	private void analyzeTestCodeFunctionNode(AstNode node) {
+		System.out.println("=== instrumentFunctionCallNode ===");
+		// getting the enclosing function name
+		String enclosingFunction = "";
+		if (node.getEnclosingFunction()!=null){
+			enclosingFunction  = getFunctionName(node.getEnclosingFunction());
+		}
+		System.out.println("enclosingFunction: " + enclosingFunction);
+
+		if (node.shortName().equals("NewExpression"))
+			return;
+
+		FunctionCall fcall = (FunctionCall) node;
+		AstNode targetNode = fcall.getTarget(); // node evaluating to the function to call. E.g document.getElemenyById(x)
+
+		// avoid instrumenting wrapper function calls!
+		if (fcall.getParent().toSource().contains("funcionCallWrapper")){
+			System.out.println("Not instrumenting " + fcall.getTarget().toSource() + ", because of: " + fcall.getParent().toSource());
+			return;
+		}
+
+		String functionName = targetNode.toSource().substring(targetNode.toSource().lastIndexOf(".")+1);
+
+		if (targetNode.toSource().equals("QUnit.module") || targetNode.toSource().equals("module"))
+			currentTest  = "TestModule";
+		if (targetNode.toSource().equals("QUnit.test") || targetNode.toSource().equals("test")){ 
+			currentTestNumber++;
+			currentTest = "Test" + Integer.toString(currentTestNumber);
+			setTestCounter(getTestCounter() + 1);
+		}
+		if (targetNode.toSource().equals("QUnit.asyncTest()") || targetNode.toSource().equals("asyncTest()")){
+			currentTestNumber++;
+			currentTest = "AsynchTest" + Integer.toString(currentTestNumber);
+			setAsynchTestCounter(getAsynchTestCounter() + 1);
+		}
+
+		if (targetNode.toSource().equals("trigger") || targetNode.toSource().equals("triggerHandler"))
+			setTriggerCounetr(getTriggerCounetr() + 1);
+
+		String[] assertionSkipList = { "assert.expect", "expect", "assert.equal", "equal", "assert.notEqual", "notEqual", "assert.deepEqual", "deepEqual", 
+				"assert.notDeepEqual", "notDeepEqual", "assert.strictEqual", "strictEqual", "assert.notStrictEqual", "notStrictEqual", "QUnit.ok", "assert.ok", "ok", "assert.notOk", "notOk", 
+				"assert.propEqual", "propEqual", "assert.notPropEqual", "notPropEqual", "assert.push", "assert.throws", "throws", "assert.async"};		
+
+		String[] otherSkipList = { "QUnit.module", "module", "QUnit.test", "test", "QUnit.asyncTest", "asyncTest", "jQuery", "$" , "start", "stop"}; // start/stop for asynchronous control	
+
+		if (ArrayUtils.contains( assertionSkipList, targetNode.toSource() ))
+			setAssertionCounter(getAssertionCounter() + 1);
+
+		if (ArrayUtils.contains( assertionSkipList, targetNode.toSource() ) || ArrayUtils.contains( otherSkipList, targetNode.toSource() )) {
+			System.out.println("Not instrumenting " + targetNode.toSource());
+			return;
+		}else
+			System.out.println("Instrumenting " + functionName);
+	}
+
+	
 	private void instrumentFunctionCallNode(AstNode node) {
 		System.out.println("=== instrumentFunctionCallNode ===");
 		// getting the enclosing function name
@@ -763,12 +830,12 @@ public class JSASTInstrumentor implements NodeVisitor{
 		this.triggerCounetr = triggerCounetr;
 	}
 
-	public boolean isInstrumentationEnable() {
-		return instrumentationEnable;
+	public String getVisitType() {
+		return this.visitType;
 	}
 
-	public void setInstrumentationEnable(boolean instrumentationEnable) {
-		this.instrumentationEnable = instrumentationEnable;
+	public void setVisitType(String visitType) {
+		this.visitType = visitType;
 	}
 
 	public void setCoverageInfo(ArrayList<Integer> coveredStatementLines, ArrayList<Integer> missedStatementLines, ArrayList<Integer> coveredFunctionsIndices, ArrayList<Integer> missedFunctionsIndices) {
@@ -911,5 +978,7 @@ public class JSASTInstrumentor implements NodeVisitor{
 		return false;
 
 	}
+
+
 }
 

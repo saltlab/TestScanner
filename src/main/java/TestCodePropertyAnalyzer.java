@@ -36,6 +36,14 @@ public class TestCodePropertyAnalyzer {
 	private static ArrayList<String> jsFileNames = new ArrayList<String>();
 	private static JSAnalyzer codeAnalyzer;
 	private static TraceAnalyzer traceAnalyzer = new TraceAnalyzer();
+	private static int NumTests;
+	private static int NumAsyncTests;
+	private static int NumAssertions;
+	private static int MaxFunCall;
+	private static float AveFunCall;
+	private static int NumDOMFixture;
+	private static int NumTriggerTest;
+	private static int NumObjCreate;
 
 	public static void main(String[] args) throws Exception {
 
@@ -45,12 +53,12 @@ public class TestCodePropertyAnalyzer {
 		System.out.println("Test framework: " + testsFramework);
 		File[] files = new File(testsFolder).listFiles();
 		if (files==null){
-			System.out.println("No test file found in directory: " + testsFolder);
+			System.out.println("No file found in directory: " + testsFolder);
 			return;
 		}
-		for (File file : files) {
+		for (File file : files)
 			processFile(file);
-		}
+
 
 		
 		/*
@@ -100,27 +108,16 @@ public class TestCodePropertyAnalyzer {
 				System.out.println("No test file found in directory: " + file.getAbsolutePath().replace(testsFolder, ""));
 				return;
 			}
-			for (File innerFile : files) {
+			for (File innerFile : files)
 				processFile(innerFile);
-			}
 		}
 		if (file.isFile()) {
 			String fileName = file.getName();
-
 			//if (fileName.endsWith(".js")){
 			if (!fileName.contains("qunit") && fileName.endsWith(".js")) {
 				//&& !fileName.equals("es.js") && !fileName.equals("helpers.js") && !fileName.equals("karma.conf.js") && !fileName.equals("es.js") && !fileName.equals("library.js")
 				//){
-				
-				codeAnalyzer.setJSFileName(fileName);
-				codeAnalyzer.setJSAddress(testsFolder + "/" + fileName);
-
-				System.out.println("Analysing the test suite in file " + fileName);
-				// calc fun calls
-
-				//codeAnalyzer.instrumentJavaScript();
 				analyseJSTestFile(file.getCanonicalPath());
-
 			}
 		}
 		
@@ -145,8 +142,11 @@ public class TestCodePropertyAnalyzer {
 		System.out.println(canonicalPath);
 		codeAnalyzer.setJSFileName(fileName);
 		codeAnalyzer.setJSAddress(canonicalPath);
+		//codeAnalyzer.setJSAddress(testsFolder + "/" + fileName);
+		System.out.println("Analysing the test suite in file " + fileName);
 		codeAnalyzer.analyzeTestCodeProperties();
-
+		
+		
 		NumTests += codeAnalyzer.getNumTests();
 		NumAsyncTests += codeAnalyzer.getNumAsyncTests();
 		NumAssertions += codeAnalyzer.getNumAssertions();
