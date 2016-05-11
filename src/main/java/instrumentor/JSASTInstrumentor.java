@@ -283,7 +283,12 @@ public class JSASTInstrumentor implements NodeVisitor{
 					analyzeProductionCodeAssignmentNode(node);
 			}
 		}else if (visitType.equals("AnalyzeTestCode")){
-
+			if (node instanceof NewExpression)
+				newExpressionCounter++;
+			else if (node instanceof FunctionNode)
+				analyzeTestCodeFunctionNode(node);
+			else if (node instanceof FunctionCall)
+				analyzeTestCodeFunctionCallNode(node);
 			
 		}else{
 			System.out.println("visitType is not set!");
@@ -551,7 +556,7 @@ public class JSASTInstrumentor implements NodeVisitor{
 	
 	
 	private void analyzeTestCodeFunctionNode(AstNode node) {
-		System.out.println("=== instrumentFunctionCallNode ===");
+		System.out.println("=== analyzeTestCodeFunctionNode ===");
 		// getting the enclosing function name
 		String enclosingFunction = "";
 		if (node.getEnclosingFunction()!=null){
@@ -603,6 +608,78 @@ public class JSASTInstrumentor implements NodeVisitor{
 			return;
 		}else
 			System.out.println("Instrumenting " + functionName);
+	}
+
+
+	private void analyzeTestCodeFunctionCallNode(AstNode node) {
+		System.out.println("=== analyzeTestCodeFunctionCallNode ===");
+		// getting the enclosing function name
+		String enclosingFunction = "";
+		if (node.getEnclosingFunction()!=null){
+			enclosingFunction  = getFunctionName(node.getEnclosingFunction());
+		}
+		System.out.println("enclosingFunction: " + enclosingFunction);
+
+		if (node.shortName().equals("NewExpression"))
+			return;
+
+		FunctionCall fcall = (FunctionCall) node;
+		AstNode targetNode = fcall.getTarget(); // node evaluating to the function to call. E.g document.getElemenyById(x)
+
+		// avoid instrumenting wrapper function calls!
+		if (fcall.getParent().toSource().contains("funcionCallWrapper")){
+			System.out.println("Not instrumenting " + fcall.getTarget().toSource() + ", because of: " + fcall.getParent().toSource());
+			return;
+		}
+
+		String functionName = targetNode.toSource().substring(targetNode.toSource().lastIndexOf(".")+1);
+
+		if (targetNode.toSource().equals("QUnit.module") || targetNode.toSource().equals("module"))
+			currentTest  = "TestModule";
+		if (targetNode.toSource().equals("QUnit.test") || targetNode.toSource().equals("test")){ 
+			currentTestNumber++;
+			currentTest = "Test" + Integer.toString(currentTestNumber);
+			setTestCounter(getTestCounter() + 1);
+		}
+		if (targetNode.toSource().equals("QUnit.asyncTest()") || targetNode.toSource().equals("asyncTest()")){
+			currentTestNumber++;
+			currentTest = "AsynchTest" + Integer.toString(currentTestNumber);
+			setAsynchTestCounter(getAsynchTestCounter() + 1);
+		}
+
+		if (targetNode.toSource().equals("trigger") || targetNode.toSource().equals("triggerHandler"))
+			setTriggerCounetr(getTriggerCounetr() + 1);
+
+		String[] assertionSkipList = { "assert.expect", "expect", "assert.equal", "equal", "assert.notEqual", "notEqual", "assert.deepEqual", "deepEqual", 
+				"assert.notDeepEqual", "notDeepEqual", "assert.strictEqual", "strictEqual", "assert.notStrictEqual", "notStrictEqual", "QUnit.ok", "assert.ok", "ok", "assert.notOk", "notOk", 
+				"assert.propEqual", "propEqual", "assert.notPropEqual", "notPropEqual", "assert.push", "assert.throws", "throws", "assert.async"};		
+
+		String[] otherSkipList = { "QUnit.module", "module", "QUnit.test", "test", "QUnit.asyncTest", "asyncTest", "jQuery", "$" , "start", "stop"}; // start/stop for asynchronous control	
+
+		if (ArrayUtils.contains( assertionSkipList, targetNode.toSource() ))
+			setAssertionCounter(getAssertionCounter() + 1);
+
+		if (ArrayUtils.contains( assertionSkipList, targetNode.toSource() ) || ArrayUtils.contains( otherSkipList, targetNode.toSource() )) {
+			System.out.println("Not instrumenting " + targetNode.toSource());
+			return;
+		}else
+			System.out.println("Instrumenting " + functionName);
+
+		// functionName, enclosingFunction, function
+		List<AstNode> args = new ArrayList<AstNode>(fcall.getArguments());
+		String wrapperCode = scopeName.replace(".js","").replace("-", "_") + "_funcionCallWrapper(\""+ functionName +"\", \"" + scopeName.replace(".js","") + "_" + currentTest + "\", " + fcall.toSource() + ")";
+		System.out.println("wrapperCode : " + wrapperCode );
+
+		AstNode wrapperNode = parse(wrapperCode);
+		ExpressionStatement es = (ExpressionStatement)((AstNode) wrapperNode.getFirstChild());
+		FunctionCall wrapperFunCall = (FunctionCall) es.getExpression();
+		args.add(wrapperFunCall.getArguments().get(0));
+		//wrapperFunCall.addArgument(fcall);
+		System.out.println("Replacing functionCall: " + fcall.toSource() + " with wrapperFunCall: " + wrapperFunCall.toSource());
+		fcall.setTarget(wrapperFunCall.getTarget());
+		fcall.setArguments(wrapperFunCall.getArguments());			
+		System.out.println("New functionCall: " + fcall.toSource());
+
 	}
 
 	

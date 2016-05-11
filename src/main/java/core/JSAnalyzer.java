@@ -466,18 +466,6 @@ public class JSAnalyzer {
 
 			astVisitor.setScopeName(scopeName);
 			/* recurse through AST */
-			astVisitor.setVisitOnly("FunctionNode");
-			ast.visit(astVisitor);
-
-			System.out.println("CoveredFunctions :" + astVisitor.getCoveredFunctions());
-			//System.out.println("CoveredFunctions.size() :" + astVisitor.getCoveredFunctions().size());
-			System.out.println("CoveredFunctionLines :" + astVisitor.getCoveredFunctionLines());
-			System.out.println("MissedFunctions :" + astVisitor.getMissedFunctions());
-			//System.out.println("MissedFunctions.size() :" + astVisitor.getMissedFunctions().size());
-			System.out.println("MissedFunctionLines :" + astVisitor.getMissedFunctionLines());
-			
-			
-			astVisitor.setVisitOnly("FunctionCall");
 			ast.visit(astVisitor);
 
 			System.out.println("FunctionCalls :" + astVisitor.getFunctionCalls());
@@ -491,7 +479,6 @@ public class JSAnalyzer {
 				}
 			}
 
-		
 			coveredRegularFunc = astVisitor.getCoveredRegularFunc();
 			missedRegularFunc = astVisitor.getMissedRegularFunc();
 			coveredCallback = astVisitor.getCoveredCallback();
@@ -503,7 +490,6 @@ public class JSAnalyzer {
 			coveredClosure = astVisitor.getCoveredClosure();
 			missedClosure = astVisitor.getMissedClosure();
 
-			
 			System.out.println("++++ coveredRegularFunc: " + astVisitor.getCoveredRegularFunc());
 			System.out.println("++++ missedRegularFunc: " + astVisitor.getMissedRegularFunc());
 			System.out.println("++++ coveredCallback: " + astVisitor.getCoveredCallback());
@@ -535,13 +521,12 @@ public class JSAnalyzer {
 			}
 
 
-			/*
 			System.out.println("assertionCounter: " + astVisitor.getAssertionCounter());
 			System.out.println("newExpressionCounter: " + astVisitor.getNewExpressionCounter());
 			System.out.println("testCounter: " + astVisitor.getTestCounter());
 			System.out.println("asynchTestCounter: " + astVisitor.getAsynchTestCounter());
 			System.out.println("trieggerCounter: " + astVisitor.getTriggerCounetr());
-			 */
+
 
 			/* clean up */
 			Context.exit();
@@ -549,12 +534,8 @@ public class JSAnalyzer {
 			System.err.println(re.getMessage());
 			System.out.println("Unable to instrument. This might be a JSON response sent"
 					+ " with the wrong Content-Type or a syntax error.");
-		} catch (IllegalArgumentException iae) {
-
-			System.out.println("Invalid operator exception catched. Not instrumenting code.");
 		}
 
-		//System.out.println("Here is the corresponding buffer: \n" + input + "\n");
 		astVisitor.setVisitType("");
 	}
 
