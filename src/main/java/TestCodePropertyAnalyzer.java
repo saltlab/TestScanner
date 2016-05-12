@@ -30,7 +30,7 @@ public class TestCodePropertyAnalyzer {
 
 	private static String testsFolder = "/Users/aminmf/Documents/JavaScriptTestsStudy/popularJS/jquery-mobile/tests/";
 	private static String[] excludeFolders = { "casperjs"};		
-	private static String testsFramework = "qunit";
+	private static String testsFramework = "qunit";  // {"qunit", "jasmine", "mocha"}
 	
 
 	private static ArrayList<String> jsFileNames = new ArrayList<String>();
@@ -142,6 +142,7 @@ public class TestCodePropertyAnalyzer {
 		System.out.println(canonicalPath);
 		codeAnalyzer.setJSFileName(fileName);
 		codeAnalyzer.setJSAddress(canonicalPath);
+		codeAnalyzer.setTestFramework(testsFramework);
 		//codeAnalyzer.setJSAddress(testsFolder + "/" + fileName);
 		System.out.println("Analysing the test suite in file " + fileName);
 		codeAnalyzer.analyzeTestCodeProperties();

@@ -103,6 +103,7 @@ public class JSAnalyzer {
 	private JSASTInstrumentor astVisitor;
 	private String outputfolder;
 	private String jsAddress, scopeName;
+	private String testsFramework;
 
 
 	public void setJSAddress(String jsAddress){
@@ -437,6 +438,8 @@ public class JSAnalyzer {
 		System.out.println("===== analyzeTestCodeProperties ====");		
 
 		astVisitor.setVisitType("AnalyzeTestCode");
+		astVisitor.setTestFramework(testsFramework); 
+		
 
 		// reading js form the input file
 		String input = "";
@@ -525,6 +528,7 @@ public class JSAnalyzer {
 			System.out.println("newExpressionCounter: " + astVisitor.getNewExpressionCounter());
 			System.out.println("testCounter: " + astVisitor.getTestCounter());
 			System.out.println("asynchTestCounter: " + astVisitor.getAsynchTestCounter());
+			System.out.println("asynchTestCounter: " + astVisitor.getTestCounter());
 			System.out.println("trieggerCounter: " + astVisitor.getTriggerCounetr());
 
 
@@ -569,6 +573,10 @@ public class JSAnalyzer {
 
 	public int getNumObjCreate() {
 		return NumObjCreate;
+	}
+
+	public void setTestFramework(String testsFramework) {
+		this.testsFramework = testsFramework;
 	}
 
 }
