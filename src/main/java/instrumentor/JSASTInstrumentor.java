@@ -567,6 +567,8 @@ public class JSASTInstrumentor implements NodeVisitor{
 		if (testsFramework.equals("qunit")){
 			if (targetNode.toSource().equals("QUnit.test") || targetNode.toSource().equals("test")){ 
 				testCounter++;
+				// add a new TestCaseInfo object
+				TestCaseInfo t = new TestCaseInfo(testCounter);
 			}
 			if (targetNode.toSource().equals("QUnit.asyncTest") || targetNode.toSource().equals("asyncTest")){
 				testCounter++;
