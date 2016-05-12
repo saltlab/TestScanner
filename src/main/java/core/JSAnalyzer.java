@@ -470,6 +470,45 @@ public class JSAnalyzer {
 			astVisitor.setScopeName(scopeName);
 			/* recurse through AST */
 			ast.visit(astVisitor);
+			
+			
+			
+			
+			/*
+			// Collect execution traces
+			ArrayList traceList = null;
+			HashMultimap<String, String> functionCallsMultiMap = HashMultimap.create();
+			for (String jsFile: jsFileNames){
+				System.out.println("Getting the traceList from " + jsFile);
+				//System.out.println("return " + jsFile.replace(".js","") + "_getFuncionCallTrace();");
+				//traceList = (ArrayList)((JavascriptExecutor) driver).executeScript("return " + jsFile.replace(".js","").replace("-", "_") + "_getFuncionCallTrace();");
+				System.out.println("traceList: " + traceList);
+				Map<String,String> traceMap;
+				for (int i=0; i<traceList.size(); i++){
+					traceMap = (Map<String,String>)(traceList.get(i));
+					String testFunction = traceMap.get("testFunction");
+					String calledFunctionName = traceMap.get("functionName");
+					functionCallsMultiMap.put(testFunction, calledFunctionName);
+				}
+			}
+
+			int numUniqueFunCalls = 0;
+			int maxUniqueFunCalls = 0;
+			for (String testFunc : functionCallsMultiMap.keySet()) {
+				Set<String> calledFunc = functionCallsMultiMap.get(testFunc);
+				System.out.println(testFunc + ": " + calledFunc);
+				if (calledFunc.size() > maxUniqueFunCalls)
+					maxUniqueFunCalls = calledFunc.size(); 
+				numUniqueFunCalls += calledFunc.size();
+			}
+
+			System.out.println("numUniqueFunCalls: " + numUniqueFunCalls);
+			if (functionCallsMultiMap.keySet().size()!=0) 
+				System.out.println("aveUniqueFunCalls: " + numUniqueFunCalls/functionCallsMultiMap.keySet().size());
+			System.out.println("maxUniqueFunCalls: " + maxUniqueFunCalls);
+			*/
+
+			
 
 			System.out.println("FunctionCalls :" + astVisitor.getFunctionCalls());
 
@@ -481,56 +520,22 @@ public class JSAnalyzer {
 					neverExecFunCallSites++;
 				}
 			}
-
-			coveredRegularFunc = astVisitor.getCoveredRegularFunc();
-			missedRegularFunc = astVisitor.getMissedRegularFunc();
-			coveredCallback = astVisitor.getCoveredCallback();
-			missedCallback = astVisitor.getMissedCallback();
-			coveredAsyncCallback = astVisitor.getCoveredAsyncCallback();
-			missedAsyncCallback = astVisitor.getMissedAsyncCallback();
-			coveredEventCallback = astVisitor.getCoveredAsyncCallback();
-			missedEventCallback = astVisitor.getMissedEventCallback();
-			coveredClosure = astVisitor.getCoveredClosure();
-			missedClosure = astVisitor.getMissedClosure();
-
-			System.out.println("++++ coveredRegularFunc: " + astVisitor.getCoveredRegularFunc());
-			System.out.println("++++ missedRegularFunc: " + astVisitor.getMissedRegularFunc());
-			System.out.println("++++ coveredCallback: " + astVisitor.getCoveredCallback());
-			System.out.println("++++ missedCallback: " + astVisitor.getMissedCallback());
-			System.out.println("++++ coveredAsyncCallback: " + astVisitor.getCoveredAsyncCallback());
-			System.out.println("++++ missedAsyncCallback: " + astVisitor.getMissedAsyncCallback());
-			System.out.println("++++ coveredEventCallback: " + astVisitor.getCoveredAsyncCallback());
-			System.out.println("++++ missedEventCallback: " + astVisitor.getMissedEventCallback());
-			System.out.println("++++ coveredClosure: " + astVisitor.getCoveredClosure());
-			System.out.println("++++ missedClosure: " + astVisitor.getMissedClosure());
-
-			System.out.println("++++ neverExecFunCallSites: " + neverExecFunCallSites);
 			
-			
-			ArrayList<Integer> msimf = astVisitor.getMissedStatementInMissedFunction();
-			//System.out.println("msimf: " + msimf);
-			for (int i=0; i<msimf.size(); i++){
-				if (msimf.get(i) >= 0)
-					totalMissedStatementLinesInMissedFunctionCounter ++;
-			}
-			
-			totalMissedStatementLines = astVisitor.getMissedStatementLines().size();
-
-			System.out.println("@ Total missed statement lines in missed functioncounter = " + totalMissedStatementLinesInMissedFunctionCounter);
-			System.out.println("@ Total number of missed statements = " + totalMissedStatementLines);
-			if (totalMissedStatementLines!=0){
-				float ratio = (float)totalMissedStatementLinesInMissedFunctionCounter/(float)totalMissedStatementLines;
-				System.out.println("@ Percentage of missed statement in missed functions = " + ratio*100 + "%");
-			}
-
-
+		
+			NumTests = astVisitor.getTestCounter();
+			NumAsyncTests = astVisitor.getAsynchTestCounter();
+			NumAssertions = astVisitor.getAssertionCounter();
+			//MaxFunCall = astVisitor.getMaxFunCall();
+			//AveFunCall = astVisitor.getAveFunCall();
+			//NumDOMFixture = astVisitor.getNumDOMFixture();
+			NumTriggerTest = astVisitor.getTriggerCounetr();
+			NumObjCreate = astVisitor.getNewExpressionCounter();
+		
 			System.out.println("assertionCounter: " + astVisitor.getAssertionCounter());
 			System.out.println("newExpressionCounter: " + astVisitor.getNewExpressionCounter());
 			System.out.println("testCounter: " + astVisitor.getTestCounter());
 			System.out.println("asynchTestCounter: " + astVisitor.getAsynchTestCounter());
-			System.out.println("asynchTestCounter: " + astVisitor.getTestCounter());
 			System.out.println("trieggerCounter: " + astVisitor.getTriggerCounetr());
-
 
 			/* clean up */
 			Context.exit();
@@ -541,6 +546,7 @@ public class JSAnalyzer {
 		}
 
 		astVisitor.setVisitType("");
+		astVisitor.resetTestCodeProperties();
 	}
 
 	public int getNumTests() {

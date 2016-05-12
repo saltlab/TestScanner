@@ -59,41 +59,6 @@ public class TestCodePropertyAnalyzer {
 		for (File file : files)
 			processFile(file);
 
-
-		
-		/*
-		// Collect execution traces
-		ArrayList traceList = null;
-		HashMultimap<String, String> functionCallsMultiMap = HashMultimap.create();
-		for (String jsFile: jsFileNames){
-			System.out.println("Getting the traceList from " + jsFile);
-			//System.out.println("return " + jsFile.replace(".js","") + "_getFuncionCallTrace();");
-			//traceList = (ArrayList)((JavascriptExecutor) driver).executeScript("return " + jsFile.replace(".js","").replace("-", "_") + "_getFuncionCallTrace();");
-			System.out.println("traceList: " + traceList);
-			Map<String,String> traceMap;
-			for (int i=0; i<traceList.size(); i++){
-				traceMap = (Map<String,String>)(traceList.get(i));
-				String testFunction = traceMap.get("testFunction");
-				String calledFunctionName = traceMap.get("functionName");
-				functionCallsMultiMap.put(testFunction, calledFunctionName);
-			}
-		}
-
-		int numUniqueFunCalls = 0;
-		int maxUniqueFunCalls = 0;
-		for (String testFunc : functionCallsMultiMap.keySet()) {
-			Set<String> calledFunc = functionCallsMultiMap.get(testFunc);
-			System.out.println(testFunc + ": " + calledFunc);
-			if (calledFunc.size() > maxUniqueFunCalls)
-				maxUniqueFunCalls = calledFunc.size(); 
-			numUniqueFunCalls += calledFunc.size();
-		}
-
-		System.out.println("numUniqueFunCalls: " + numUniqueFunCalls);
-		if (functionCallsMultiMap.keySet().size()!=0) 
-			System.out.println("aveUniqueFunCalls: " + numUniqueFunCalls/functionCallsMultiMap.keySet().size());
-		System.out.println("maxUniqueFunCalls: " + maxUniqueFunCalls);
-		*/
 	}
 
 	private static void processFile(File file) throws IOException, Exception {

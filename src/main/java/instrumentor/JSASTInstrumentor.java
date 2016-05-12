@@ -37,7 +37,7 @@ public class JSASTInstrumentor implements NodeVisitor{
 	private int currentTestNumber = 0;
 	private String currentTest = "";
 	private int testCounter = 0;
-	private int asynchTestCounter = 0;
+	private int asyncTestCounter = 0;
 	private int assertionCounter = 0;
 	private int newExpressionCounter = 0;
 	private int triggerCounetr = 0;
@@ -554,31 +554,28 @@ public class JSASTInstrumentor implements NodeVisitor{
 		if (node.getEnclosingFunction()!=null){
 			enclosingFunction  = getFunctionName(node.getEnclosingFunction());
 		}
-		System.out.println("enclosingFunction: " + enclosingFunction);
+		//System.out.println("enclosingFunction: " + enclosingFunction);
 
 		if (node.shortName().equals("NewExpression"))
 			return;
 
 		FunctionCall fcall = (FunctionCall) node;
 		AstNode targetNode = fcall.getTarget(); // node evaluating to the function to call. E.g document.getElemenyById(x)
-		System.out.println("targetNode.toSource(): " + targetNode.toSource());
-
+		//System.out.println("targetNode.toSource(): " + targetNode.toSource());
 		String functionName = targetNode.toSource().substring(targetNode.toSource().lastIndexOf(".")+1);
 
 		if (testsFramework.equals("qunit")){
 			if (targetNode.toSource().equals("QUnit.test") || targetNode.toSource().equals("test")){ 
 				testCounter++;
 			}
-			if (targetNode.toSource().equals("QUnit.asyncTest()") || targetNode.toSource().equals("asyncTest()")){
+			if (targetNode.toSource().equals("QUnit.asyncTest") || targetNode.toSource().equals("asyncTest")){
 				testCounter++;
-				asynchTestCounter++;
-				setAsynchTestCounter(getAsynchTestCounter() + 1);
+				asyncTestCounter++;
 			}
-		}
-				
+		}			
 
 		if (targetNode.toSource().equals("trigger") || targetNode.toSource().equals("triggerHandler"))
-			setTriggerCounetr(getTriggerCounetr() + 1);
+			triggerCounetr++;
 
 		String[] assertionSkipList = { "assert.expect", "expect", "assert.equal", "equal", "assert.notEqual", "notEqual", "assert.deepEqual", "deepEqual", 
 				"assert.notDeepEqual", "notDeepEqual", "assert.strictEqual", "strictEqual", "assert.notStrictEqual", "notStrictEqual", "QUnit.ok", "assert.ok", "ok", "assert.notOk", "notOk", 
@@ -587,13 +584,17 @@ public class JSASTInstrumentor implements NodeVisitor{
 		String[] otherSkipList = { "QUnit.module", "module", "QUnit.test", "test", "QUnit.asyncTest", "asyncTest", "jQuery", "$" , "start", "stop"}; // start/stop for asynchronous control	
 
 		if (ArrayUtils.contains( assertionSkipList, targetNode.toSource() ))
-			setAssertionCounter(getAssertionCounter() + 1);
+			assertionCounter++;
 
 		if (ArrayUtils.contains( assertionSkipList, targetNode.toSource() ) || ArrayUtils.contains( otherSkipList, targetNode.toSource() )) {
-			System.out.println("Not counting the called function: " + targetNode.toSource());
+			System.out.println("Not counting the called function: " + functionName);
 			return;
-		}else
+		}else{
 			System.out.println("Counting the called function: " + functionName);
+			if (!functionCalls.contains(functionName))
+				functionCalls.add(functionName);
+
+		}
 
 	}
 	
@@ -806,11 +807,11 @@ public class JSASTInstrumentor implements NodeVisitor{
 	}
 
 	public int getAsynchTestCounter() {
-		return asynchTestCounter;
+		return asyncTestCounter;
 	}
 
 	public void setAsynchTestCounter(int asynchTestCounter) {
-		this.asynchTestCounter = asynchTestCounter;
+		this.asyncTestCounter = asynchTestCounter;
 	}
 
 	public int getTriggerCounetr() {
@@ -974,6 +975,15 @@ public class JSASTInstrumentor implements NodeVisitor{
 	public void setTestFramework(String testsFramework) {
 		this.testsFramework = testsFramework;
 		
+	}
+
+
+	public void resetTestCodeProperties() {
+		this.testCounter = 0;
+		this.asyncTestCounter = 0;
+		this.assertionCounter = 0;
+		this.newExpressionCounter = 0;
+		this.triggerCounetr = 0;		
 	}
 
 
