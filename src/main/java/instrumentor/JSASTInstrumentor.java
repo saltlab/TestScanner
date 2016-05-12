@@ -42,6 +42,11 @@ public class JSASTInstrumentor implements NodeVisitor{
 	private int newExpressionCounter = 0;
 	private int triggerCounetr = 0;
 
+	private ArrayList<TestCaseInfo> testCaseInfoList = new ArrayList<TestCaseInfo>();
+	public ArrayList<TestCaseInfo> getTestCaseInfoList() {
+		return testCaseInfoList;
+	}
+		
 	private ArrayList<Integer> coveredStatementLines = new ArrayList<Integer>();
 	private ArrayList<Integer> missedStatementLines = new ArrayList<Integer>();
 	public ArrayList<Integer> getMissedStatementLines() {
@@ -568,11 +573,14 @@ public class JSASTInstrumentor implements NodeVisitor{
 			if (targetNode.toSource().equals("QUnit.test") || targetNode.toSource().equals("test")){ 
 				testCounter++;
 				// add a new TestCaseInfo object
-				TestCaseInfo t = new TestCaseInfo(testCounter);
+				TestCaseInfo t = new TestCaseInfo(testCounter, "sync");
+				testCaseInfoList.add(t);
 			}
 			if (targetNode.toSource().equals("QUnit.asyncTest") || targetNode.toSource().equals("asyncTest")){
 				testCounter++;
 				asyncTestCounter++;
+				TestCaseInfo t = new TestCaseInfo(testCounter, "async");
+				testCaseInfoList.add(t);
 			}
 		}			
 
@@ -585,8 +593,12 @@ public class JSASTInstrumentor implements NodeVisitor{
 
 		String[] otherSkipList = { "QUnit.module", "module", "QUnit.test", "test", "QUnit.asyncTest", "asyncTest", "jQuery", "$" , "start", "stop"}; // start/stop for asynchronous control	
 
-		if (ArrayUtils.contains( assertionSkipList, targetNode.toSource() ))
+		if (ArrayUtils.contains( assertionSkipList, targetNode.toSource() )){
 			assertionCounter++;
+			TestCaseInfo t = testCaseInfoList.get(testCaseInfoList.size()-1);
+			t.setNumAssertions(t.getNumAssertions()+1);
+			System.out.println("Test case " + t.getTestNumber() + " has " + t.getNumAssertions() + " assertions!");
+		}
 
 		if (ArrayUtils.contains( assertionSkipList, targetNode.toSource() ) || ArrayUtils.contains( otherSkipList, targetNode.toSource() )) {
 			System.out.println("Not counting the called function: " + functionName);

@@ -3,13 +3,14 @@ package instrumentor;
 public class TestCaseInfo {
 	private int testNumber;
 	private String type;   // {"async", "sync"}
-	private int numFunCall;  // number of unique function calls in the test case
-	private int numAssertions;
-	private int numObjCreation;
-	private int numTriggers;
+	private int numFunCall = 0;  // number of unique function calls in the test case
+	private int numAssertions = 0;
+	private int numObjCreation = 0;
+	private int numTriggers = 0;
 
-	public TestCaseInfo(int testNumber){
+	public TestCaseInfo(int testNumber, String type){
 		this.testNumber = testNumber;
+		this.type = type;
 	}
 	
 	public int getTestNumber() {
