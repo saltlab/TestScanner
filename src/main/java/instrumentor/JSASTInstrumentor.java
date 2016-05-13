@@ -46,7 +46,13 @@ public class JSASTInstrumentor implements NodeVisitor{
 	public ArrayList<TestCaseInfo> getTestCaseInfoList() {
 		return testCaseInfoList;
 	}
-		
+
+	private ArrayList<TestUtilityFunctionInfo> testUtilityFunctionInfoList = new ArrayList<TestUtilityFunctionInfo>();
+	public ArrayList<TestUtilityFunctionInfo> getTestUtilityFunctionInfoList() {
+		return testUtilityFunctionInfoList;
+	}
+
+	
 	private ArrayList<Integer> coveredStatementLines = new ArrayList<Integer>();
 	private ArrayList<Integer> missedStatementLines = new ArrayList<Integer>();
 	public ArrayList<Integer> getMissedStatementLines() {
@@ -142,12 +148,12 @@ public class JSASTInstrumentor implements NodeVisitor{
 	private int missedRegularFunc = 0;
 
 	private String testsFramework;
-	
+
 	public int getMissedRegularFunc() {
 		return missedRegularFunc;
 	}
 
-	
+
 	public void setVisitOnly(String visitOnly){
 		this.visitOnly = visitOnly;
 	}
@@ -288,11 +294,16 @@ public class JSASTInstrumentor implements NodeVisitor{
 					analyzeProductionCodeAssignmentNode(node);
 			}
 		}else if (visitType.equals("AnalyzeTestCode")){
-			if (node instanceof NewExpression)
-				newExpressionCounter++;
-			else if (node instanceof FunctionCall)
-				analyzeTestCodeFunctionCallNode(node);
-			
+			if (visitOnly.equals("FunctionNode")){
+				if (node instanceof FunctionNode)
+					analyzeTestCodeFunctionNode(node);
+			}else{
+				if (node instanceof NewExpression)
+					newExpressionCounter++;
+				else if (node instanceof FunctionCall)
+					analyzeTestCodeFunctionCallNode(node);
+			}
+
 		}else{
 			System.out.println("visitType is not set!");
 		}
@@ -339,7 +350,7 @@ public class JSASTInstrumentor implements NodeVisitor{
 				missedFunctionLines.add(lineNumber);
 			System.out.println("======== Missed function at line" + (node.getLineno()+1) + " - Function name: " + functionName);
 			//System.out.println("Missed function from line " + (f.getLineno()+1) + " to " + (f.getEndLineno()+1));
-			
+
 			// fill missedStatementInMissedFunction array with corresponding function index value
 			int missedStatementLinescounter = 0;
 			for (int i=0; i<missedStatementLines.size(); i++){
@@ -436,6 +447,36 @@ public class JSASTInstrumentor implements NodeVisitor{
 
 	}
 
+
+	
+	private void analyzeTestCodeFunctionNode(AstNode node) {
+		// Functions in test files are considered as test utility functions
+		
+		FunctionNode f = (FunctionNode) node;
+		int numOfParam = f.getParams().size();
+		int lineNumber = node.getLineno()+1;
+		int fLength = f.getEndLineno() - f.getLineno();		
+		int fDepth = node.depth();
+		String funcLocation = "regular";
+		String functionName = getFunctionName(f);
+		System.out.println("Test utility function name: " + functionName);
+
+		AstNode parentNode = node.getParent();
+		String parentNodeSource = parentNode.toSource();
+		String parentNodeName = parentNode.shortName();
+		//System.out.println("shortName: " + shortName);
+		//System.out.println("parentNodeName: " + parentNodeName);
+
+		String enclosingFunction = "";
+		if (node.getEnclosingFunction()!=null){
+			enclosingFunction  = getFunctionName(node.getEnclosingFunction());
+		}
+		//System.out.println("enclosingFunction: " + enclosingFunction);
+
+		
+		TestUtilityFunctionInfo tufi = new TestUtilityFunctionInfo(functionName);
+		testUtilityFunctionInfoList.add(tufi);
+	}
 
 
 	private void analyzeProductionCodeFunctionCallNode(AstNode node) {
@@ -551,7 +592,7 @@ public class JSASTInstrumentor implements NodeVisitor{
 		System.out.println("Nothing instrumented!");
 
 	}
-	
+
 	private void analyzeTestCodeFunctionCallNode(AstNode node) {
 		System.out.println("=== analyzeTestCodeFunctionCallNode ===");
 		// getting the enclosing function name
@@ -611,7 +652,7 @@ public class JSASTInstrumentor implements NodeVisitor{
 		}
 
 	}
-	
+
 	private void instrumentFunctionCallNode(AstNode node) {
 		System.out.println("=== instrumentFunctionCallNode ===");
 		// getting the enclosing function name
@@ -973,7 +1014,7 @@ public class JSASTInstrumentor implements NodeVisitor{
 		 	setTimeout(func, delay, [param1, param2, ...])
 			setInterval(func, delay[, param1, param2, ...])
 		 */
-		
+
 		// TODO: XHR and others from Keheliya's paper
 
 		String[] asyncMethods = { "setImmediate", "setTimeout", "setInterval"};		
@@ -988,7 +1029,7 @@ public class JSASTInstrumentor implements NodeVisitor{
 
 	public void setTestFramework(String testsFramework) {
 		this.testsFramework = testsFramework;
-		
+
 	}
 
 
@@ -998,6 +1039,11 @@ public class JSASTInstrumentor implements NodeVisitor{
 		this.assertionCounter = 0;
 		this.newExpressionCounter = 0;
 		this.triggerCounetr = 0;		
+	}
+
+
+	public ArrayList<TestUtilityFunctionInfo> getTestUtilityFunctions() {
+		return testUtilityFunctionInfoList;
 	}
 
 

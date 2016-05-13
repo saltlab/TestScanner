@@ -469,11 +469,14 @@ public class JSAnalyzer {
 
 			astVisitor.setScopeName(scopeName);
 			/* recurse through AST */
+			astVisitor.setVisitOnly("FunctionNode");   // detecting test utility functions
 			ast.visit(astVisitor);
-			
-			
-			
-			
+
+			System.out.println("Test utility functions :" + astVisitor.getTestUtilityFunctions());
+
+			astVisitor.setVisitOnly("FunctionCall");   // collecting stats regarding function calls
+			ast.visit(astVisitor);
+
 			/*
 			// Collect execution traces
 			ArrayList traceList = null;
@@ -508,7 +511,6 @@ public class JSAnalyzer {
 			System.out.println("maxUniqueFunCalls: " + maxUniqueFunCalls);
 			*/
 
-			
 
 			System.out.println("FunctionCalls :" + astVisitor.getFunctionCalls());
 
