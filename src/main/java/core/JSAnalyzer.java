@@ -26,8 +26,7 @@ public class JSAnalyzer {
 	private static int NumTests = 0;
 	private static int NumAsyncTests = 0;
 	private static int NumAssertions = 0;
-	private static int MaxFunCall = 0;
-	private static float AveFunCall = 0;
+	private static int NumFunCall = 0;
 	private static int NumDOMFixture = 0;
 	private static int NumTriggerTest = 0;
 	private static int NumObjCreate = 0;
@@ -527,16 +526,15 @@ public class JSAnalyzer {
 			NumTests = astVisitor.getTestCounter();
 			NumAsyncTests = astVisitor.getAsynchTestCounter();
 			NumAssertions = astVisitor.getAssertionCounter();
-			//MaxFunCall = astVisitor.getMaxFunCall();
-			//AveFunCall = astVisitor.getAveFunCall();
-			//NumDOMFixture = astVisitor.getNumDOMFixture();
+			NumFunCall = astVisitor.getFunCallCounter();
 			NumTriggerTest = astVisitor.getTriggerCounetr();
 			NumObjCreate = astVisitor.getNewExpressionCounter();
 		
-			System.out.println("assertionCounter: " + astVisitor.getAssertionCounter());
-			System.out.println("newExpressionCounter: " + astVisitor.getNewExpressionCounter());
 			System.out.println("testCounter: " + astVisitor.getTestCounter());
 			System.out.println("asynchTestCounter: " + astVisitor.getAsynchTestCounter());
+			System.out.println("assertionCounter: " + astVisitor.getAssertionCounter());
+			System.out.println("funCallCounter: " + astVisitor.getFunCallCounter());
+			System.out.println("newExpressionCounter: " + astVisitor.getNewExpressionCounter());
 			System.out.println("trieggerCounter: " + astVisitor.getTriggerCounetr());
 
 			/* clean up */
@@ -563,12 +561,8 @@ public class JSAnalyzer {
 		return NumAssertions;
 	}
 
-	public int getMaxFunCall() {
-		return MaxFunCall;
-	}
-
-	public float getAveFunCall() {
-		return AveFunCall;
+	public int getNumFunCall() {
+		return NumFunCall;
 	}
 
 	public int getNumDOMFixture() {

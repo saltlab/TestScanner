@@ -39,8 +39,9 @@ public class TestCodePropertyAnalyzer {
 	private static int NumTests;
 	private static int NumAsyncTests;
 	private static int NumAssertions;
-	private static int MaxFunCall;
-	private static float AveFunCall;
+	private static int NumFunCall = 0;
+	private static int MaxFunCall = 0;
+	private static float AveFunCall = 0;
 	private static int NumDOMFixture;
 	private static int NumTriggerTest;
 	private static int NumObjCreate;
@@ -116,8 +117,10 @@ public class TestCodePropertyAnalyzer {
 		NumTests += codeAnalyzer.getNumTests();
 		NumAsyncTests += codeAnalyzer.getNumAsyncTests();
 		NumAssertions += codeAnalyzer.getNumAssertions();
-		MaxFunCall += codeAnalyzer.getMaxFunCall();
-		AveFunCall += codeAnalyzer.getAveFunCall();
+		NumFunCall += codeAnalyzer.getNumFunCall();
+		if (codeAnalyzer.getNumFunCall() > MaxFunCall)
+			MaxFunCall = codeAnalyzer.getNumFunCall();
+		AveFunCall = (float)NumFunCall/(float)NumTests;
 		NumDOMFixture += codeAnalyzer.getNumDOMFixture();
 		NumTriggerTest += codeAnalyzer.getNumTriggerTest();
 		NumObjCreate += codeAnalyzer.getNumObjCreate();

@@ -39,6 +39,7 @@ public class JSASTInstrumentor implements NodeVisitor{
 	private int testCounter = 0;
 	private int asyncTestCounter = 0;
 	private int assertionCounter = 0;
+	private int funCallCounter = 0;
 	private int newExpressionCounter = 0;
 	private int triggerCounetr = 0;
 
@@ -656,14 +657,16 @@ public class JSASTInstrumentor implements NodeVisitor{
 					TestCaseInfo t = testCaseInfoList.get(testCaseInfoList.size()-1);
 					t.setNumFunCall(t.getNumFunCall()+1);
 					System.out.println("Test case " + t.getTestNumber() + " has " + t.getNumFunCall() + " function calls!");
+					funCallCounter++;
 				}else{
 					TestUtilityFunctionInfo tufi = testUtilityFunctionInfoList.get(testUtilityFunctionInfoList.size()-1);
 					tufi.setNumFunCall(tufi.getNumFunCall()+1);
 					System.out.println("Test utility function " + tufi.getFuncName() + " has " + tufi.getNumFunCall() + " function calls!");
 					//System.out.println("A function call found out of a test case");
 				}
+			}else{
+				System.out.println("Repeated!");
 			}
-
 		}
 
 	}
@@ -1063,6 +1066,15 @@ public class JSASTInstrumentor implements NodeVisitor{
 		return testUtilityFunctionInfoList;
 	}
 
+
+	
+	
+	public void setFunCallCounter(int funCallCounter) {
+		this.funCallCounter = funCallCounter;
+	}
+	public int getFunCallCounter() {
+		return funCallCounter;
+	}
 
 }
 
