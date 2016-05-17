@@ -639,10 +639,16 @@ public class JSASTInstrumentor implements NodeVisitor{
 				t.setNumAssertions(t.getNumAssertions()+1);
 				System.out.println("Test case " + t.getTestNumber() + " has " + t.getNumAssertions() + " assertions!");
 			}else{
-				TestUtilityFunctionInfo tufi = testUtilityFunctionInfoList.get(testUtilityFunctionInfoList.size()-1);
-				tufi.setNumAssertions(tufi.getNumAssertions()+1);
-				System.out.println("Test utility function " + tufi.getFuncName() + " has " + tufi.getNumAssertions() + " assertions!");
-				//System.out.println("An assertion found out of a test case");
+				// search for a test utility function with the same name as the enclosingFunction
+				for(TestUtilityFunctionInfo tufi: testUtilityFunctionInfoList){
+					if (tufi.getFuncName().equals(enclosingFunction)){
+						tufi.setNumAssertions(tufi.getNumAssertions()+1);
+						System.out.println("Test utility function " + tufi.getFuncName() + " has " + tufi.getNumAssertions() + " assertions!");
+						//System.out.println("An assertion found out of a test case");
+						break;
+					}
+				}
+				//TestUtilityFunctionInfo tufi = testUtilityFunctionInfoList.get(testUtilityFunctionInfoList.size()-1);
 			}
 		}
 
@@ -650,19 +656,41 @@ public class JSASTInstrumentor implements NodeVisitor{
 			System.out.println("Not counting the called function: " + functionName);
 			return;
 		}else{
-			System.out.println("Counting the called function: " + functionName);
+			System.out.println("Counting the called function: " + functionName + " with enclosingFunction: " + enclosingFunction);
 			if (!functionCalls.contains(functionName)){
 				functionCalls.add(functionName);
 				if (testCaseInfoList.size()!=0){
 					TestCaseInfo t = testCaseInfoList.get(testCaseInfoList.size()-1);
-					t.setNumFunCall(t.getNumFunCall()+1);
+					int currentNumFunCalls = t.getNumFunCall();
+					// search for a test utility function with the same name as the functionName
+					boolean testUtilFunCall = false;
+					for(TestUtilityFunctionInfo tufi: testUtilityFunctionInfoList){
+						if (tufi.getFuncName().equals(functionName)){
+							System.out.println("The called function " + functionName + " is a test utility function with " + tufi.getNumFunCall() + " function calls! Adding to the test info...");
+							currentNumFunCalls += tufi.getNumFunCall();
+							//System.out.println("A function call found out of a test case");
+							testUtilFunCall = true;
+							break;
+						}
+					}
+					if (testUtilFunCall==false)
+						t.setNumFunCall(currentNumFunCalls+1);
+					else
+						t.setNumFunCall(currentNumFunCalls);  // do not add the call to the test utility function
+						
 					System.out.println("Test case " + t.getTestNumber() + " has " + t.getNumFunCall() + " function calls!");
 					funCallCounter++;
 				}else{
-					TestUtilityFunctionInfo tufi = testUtilityFunctionInfoList.get(testUtilityFunctionInfoList.size()-1);
-					tufi.setNumFunCall(tufi.getNumFunCall()+1);
-					System.out.println("Test utility function " + tufi.getFuncName() + " has " + tufi.getNumFunCall() + " function calls!");
-					//System.out.println("A function call found out of a test case");
+					// search for a test utility function with the same name as the enclosingFunction
+					for(TestUtilityFunctionInfo tufi: testUtilityFunctionInfoList){
+						if (tufi.getFuncName().equals(enclosingFunction)){
+							tufi.setNumFunCall(tufi.getNumFunCall()+1);
+							System.out.println("Test utility function " + tufi.getFuncName() + " has " + tufi.getNumFunCall() + " function calls!");
+							//System.out.println("A function call found out of a test case");
+							break;
+						}
+					}
+					//TestUtilityFunctionInfo tufi = testUtilityFunctionInfoList.get(testUtilityFunctionInfoList.size()-1);
 				}
 			}else{
 				System.out.println("Repeated!");
