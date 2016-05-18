@@ -1,5 +1,7 @@
 package instrumentor;
 
+import java.util.ArrayList;
+
 public class TestCaseInfo {
 	private int testNumber;
 	private String type;   // {"async", "sync"}
@@ -12,6 +14,18 @@ public class TestCaseInfo {
 		this.testNumber = testNumber;
 		this.type = type;
 	}
+
+	private ArrayList<String> functionCalls = new ArrayList<String>();
+	public ArrayList<String> getFunctionCalls() {
+		return functionCalls;
+	}
+	public void addFunctionCall(String fc) {
+		if (!functionCalls.contains(fc))
+			functionCalls.add(fc);
+		else
+			System.out.println("Repeated!");
+	}
+
 	
 	public int getTestNumber() {
 		return testNumber;

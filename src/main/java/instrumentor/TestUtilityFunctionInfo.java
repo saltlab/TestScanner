@@ -1,5 +1,7 @@
 package instrumentor;
 
+import java.util.ArrayList;
+
 /**
  * A test utility function is a function written in a test suite that is called in test cases
  * @author aminmf
@@ -15,7 +17,18 @@ public class TestUtilityFunctionInfo {
 	public TestUtilityFunctionInfo(String funcName){
 		this.funcName = funcName;
 	}
-	
+
+	private ArrayList<String> functionCalls = new ArrayList<String>();
+	public ArrayList<String> getFunctionCalls() {
+		return functionCalls;
+	}
+	public void addFunctionCall(String fc) {
+		if (!functionCalls.contains(fc))
+			functionCalls.add(fc);
+		else
+			System.out.println("Repeated!");
+	}
+
 	public String getFuncName() {
 		return funcName;
 	}
@@ -23,7 +36,7 @@ public class TestUtilityFunctionInfo {
 		this.funcName = funcName;
 	}
 	public int getNumFunCall() {
-		return numFunCall;
+		return functionCalls.size();
 	}
 	public void setNumFunCall(int numFunCall) {
 		this.numFunCall = numFunCall;
