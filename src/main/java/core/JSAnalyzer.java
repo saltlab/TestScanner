@@ -27,7 +27,6 @@ public class JSAnalyzer {
 	private static int NumAsyncTests = 0;
 	private static int NumAssertions = 0;
 	private static int NumFunCall = 0;
-	private static int NumDOMFixture = 0;
 	private static int NumTriggerTest = 0;
 	private static int NumObjCreate = 0;
 	
@@ -439,7 +438,6 @@ public class JSAnalyzer {
 		astVisitor.setVisitType("AnalyzeTestCode");
 		astVisitor.setTestFramework(testsFramework); 
 		
-
 		// reading js form the input file
 		String input = "";
 		FileInputStream inputStream = new FileInputStream(jsAddress);
@@ -461,10 +459,6 @@ public class JSAnalyzer {
 			//System.out.println("************** AST ******************");
 			//System.out.println(ast.toSource());
 			//System.out.println(ast.debugPrint());
-			//writeJSToFile(scopename, input);
-			//writeFunctionsToFile(input);
-			//System.out.println("AST BEFORE : ");
-			//System.out.println(ast.toSource());
 
 			astVisitor.setScopeName(scopeName);
 			/* recurse through AST */
@@ -477,7 +471,6 @@ public class JSAnalyzer {
 			ast.visit(astVisitor);
 
 			System.out.println("FunctionCallsInTests :" + astVisitor.getFunctionCallsInTests());
-			
 		
 			NumTests = astVisitor.getTestCounter();
 			NumAsyncTests = astVisitor.getAsynchTestCounter();
@@ -519,10 +512,6 @@ public class JSAnalyzer {
 
 	public int getNumFunCall() {
 		return NumFunCall;
-	}
-
-	public int getNumDOMFixture() {
-		return NumDOMFixture;
 	}
 
 	public int getNumTriggerTest() {

@@ -93,7 +93,8 @@ public class JSASTInstrumentor implements NodeVisitor{
 	}
 
 	private ArrayList<String> functionCalls = new ArrayList<String>();
-	public ArrayList<String> getFunctionCalls() {
+
+	public ArrayList<String> getFunctionCallsInTests() {
 		ArrayList<String> funCalls = new ArrayList<String>();
 		for (TestCaseInfo tc: testCaseInfoList){
 			funCalls.addAll(tc.getFunctionCalls());
@@ -101,7 +102,7 @@ public class JSASTInstrumentor implements NodeVisitor{
 		return funCalls;
 	}
 
-	public ArrayList<String> getFunctionCallsInTests() {
+	public ArrayList<String> getFunctionCalls() {
 		return functionCalls;
 	}
 	

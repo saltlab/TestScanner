@@ -42,7 +42,6 @@ public class TestCodePropertyAnalyzer {
 	private static int NumFunCall = 0;
 	private static int MaxFunCall = 0;
 	private static float AveFunCall = 0;
-	private static int NumDOMFixture;
 	private static int NumTriggerTest;
 	private static int NumObjCreate;
 
@@ -121,7 +120,6 @@ public class TestCodePropertyAnalyzer {
 		if (codeAnalyzer.getNumFunCall() > MaxFunCall)
 			MaxFunCall = codeAnalyzer.getNumFunCall();
 		AveFunCall = (float)NumFunCall/(float)NumTests;
-		NumDOMFixture += codeAnalyzer.getNumDOMFixture();
 		NumTriggerTest += codeAnalyzer.getNumTriggerTest();
 		NumObjCreate += codeAnalyzer.getNumObjCreate();
 		
@@ -132,7 +130,6 @@ public class TestCodePropertyAnalyzer {
 		System.out.println("++++ NumAssertions: " + NumAssertions);
 		System.out.println("++++ MaxFunCall: " + MaxFunCall);
 		System.out.println("++++ AveFunCall: " + AveFunCall);
-		System.out.println("++++ NumDOMFixture: " + NumDOMFixture);
 		System.out.println("++++ NumTriggerTest: " + NumTriggerTest);
 		System.out.println("++++ NumObjCreate: " + NumObjCreate);
 		System.out.println("==========================");
