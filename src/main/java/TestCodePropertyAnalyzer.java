@@ -42,7 +42,7 @@ public class TestCodePropertyAnalyzer {
 	private static int NumFunCall = 0;
 	private static int MaxFunCall = 0;
 	private static float AveFunCall = 0;
-	private static int NumTriggerTest;
+	private static int NumTriggerInTest;
 	private static int NumObjCreate;
 
 	public static void main(String[] args) throws Exception {
@@ -116,11 +116,11 @@ public class TestCodePropertyAnalyzer {
 		NumTests += codeAnalyzer.getNumTests();
 		NumAsyncTests += codeAnalyzer.getNumAsyncTests();
 		NumAssertions += codeAnalyzer.getNumAssertions();
-		NumFunCall += codeAnalyzer.getNumFunCall();
-		if (codeAnalyzer.getNumFunCall() > MaxFunCall)
-			MaxFunCall = codeAnalyzer.getNumFunCall();
-		AveFunCall = (float)NumFunCall/(float)NumTests;
-		NumTriggerTest += codeAnalyzer.getNumTriggerTest();
+		NumFunCall += codeAnalyzer.getNumFunCallTest();
+		if (codeAnalyzer.getMaxFunCallTest() > MaxFunCall)
+			MaxFunCall = codeAnalyzer.getMaxFunCallTest();
+		AveFunCall  = (float)NumFunCall/(float)NumTests;
+		NumTriggerInTest += codeAnalyzer.getNumTriggerTest();
 		NumObjCreate += codeAnalyzer.getNumObjCreate();
 		
 		
@@ -128,9 +128,10 @@ public class TestCodePropertyAnalyzer {
 		System.out.println("++++ NumTests: " + NumTests);
 		System.out.println("++++ NumAsyncTests: " + NumAsyncTests);
 		System.out.println("++++ NumAssertions: " + NumAssertions);
+		System.out.println("++++ NumFunCall: " + NumFunCall);
 		System.out.println("++++ MaxFunCall: " + MaxFunCall);
 		System.out.println("++++ AveFunCall: " + AveFunCall);
-		System.out.println("++++ NumTriggerTest: " + NumTriggerTest);
+		System.out.println("++++ NumTriggerInTest: " + NumTriggerInTest);
 		System.out.println("++++ NumObjCreate: " + NumObjCreate);
 		System.out.println("==========================");
 		

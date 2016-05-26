@@ -9,6 +9,8 @@ public class TestCaseInfo {
 	private int numAssertions = 0;
 	private int numObjCreation = 0;
 	private int numTriggers = 0;
+	private int beginLineNum = 0;
+	private int endLineNum = 0;
 
 	public TestCaseInfo(int testNumber, String type){
 		this.testNumber = testNumber;
@@ -24,6 +26,19 @@ public class TestCaseInfo {
 			functionCalls.add(fc);
 		else
 			System.out.println("Repeated!");
+	}
+
+	
+	public void setBeginEndLines(int begin, int end){
+		this.beginLineNum = begin;
+		this.endLineNum = end;
+	}
+	
+	public boolean containsLine(int lineNum){
+		if (lineNum >= beginLineNum && lineNum <= endLineNum)
+			return true;
+		System.out.println("Line " + lineNum + " is out of test function [" + beginLineNum + "-" + endLineNum + "]");
+		return false;
 	}
 
 	

@@ -27,6 +27,8 @@ public class JSAnalyzer {
 	private static int NumAsyncTests = 0;
 	private static int NumAssertions = 0;
 	private static int NumFunCall = 0;
+	private static int NumFunCallTest = 0;  // store number of function calls in a test code
+	private static int MaxNumFunCallTest = 0;  // store max number of function calls in a test case
 	private static int NumTriggerTest = 0;
 	private static int NumObjCreate = 0;
 	
@@ -475,16 +477,18 @@ public class JSAnalyzer {
 			NumTests = astVisitor.getTestCounter();
 			NumAsyncTests = astVisitor.getAsynchTestCounter();
 			NumAssertions = astVisitor.getAssertionCounter();
-			NumFunCall = astVisitor.getFunCallCounter();
+			NumFunCallTest = astVisitor.getFunCallCounterInTest();
+			MaxNumFunCallTest = astVisitor.getMaxFunctionCallsInTests();
 			NumTriggerTest = astVisitor.getTriggerCounetr();
 			NumObjCreate = astVisitor.getNewExpressionCounter();
 		
-			System.out.println("testCounter: " + astVisitor.getTestCounter());
-			System.out.println("asynchTestCounter: " + astVisitor.getAsynchTestCounter());
-			System.out.println("assertionCounter: " + astVisitor.getAssertionCounter());
-			System.out.println("funCallCounter: " + astVisitor.getFunCallCounter());
-			System.out.println("newExpressionCounter: " + astVisitor.getNewExpressionCounter());
-			System.out.println("trieggerCounter: " + astVisitor.getTriggerCounetr());
+			System.out.println("NumTests: " + NumTests);
+			System.out.println("NumAsyncTests: " + NumAsyncTests);
+			System.out.println("NumAssertions: " + NumAssertions);
+			System.out.println("NumFunCallTest: " + NumFunCallTest);
+			System.out.println("MaxNumFunCallTest: " + MaxNumFunCallTest);
+			System.out.println("NumTriggerTest: " + NumTriggerTest);
+			System.out.println("NumObjCreate: " + NumObjCreate);
 
 			/* clean up */
 			Context.exit();
@@ -512,6 +516,14 @@ public class JSAnalyzer {
 
 	public int getNumFunCall() {
 		return NumFunCall;
+	}
+	
+	public int getNumFunCallTest() {
+		return NumFunCallTest;
+	}
+
+	public int getMaxFunCallTest() {
+		return MaxNumFunCallTest;
 	}
 
 	public int getNumTriggerTest() {
