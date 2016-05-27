@@ -2,9 +2,8 @@ package instrumentor;
 
 import java.util.ArrayList;
 
-public class TestCaseInfo {
-	private int testNumber;
-	private String type;   // {"async", "sync"}
+public class TestModuleInfo {
+	private int moduleNumber;
 	private int numFunCall = 0;  // number of unique function calls in the test case
 	private int numAssertions = 0;
 	private int numObjCreation = 0;
@@ -12,9 +11,8 @@ public class TestCaseInfo {
 	private int beginLineNum = 0;
 	private int endLineNum = 0;
 
-	public TestCaseInfo(int testNumber, String type){
-		this.testNumber = testNumber;
-		this.type = type;
+	public TestModuleInfo(int testNumber){
+		this.moduleNumber = testNumber;
 	}
 
 	private ArrayList<String> functionCalls = new ArrayList<String>();
@@ -43,16 +41,10 @@ public class TestCaseInfo {
 
 	
 	public int getTestNumber() {
-		return testNumber;
+		return moduleNumber;
 	}
 	public void setTestNumber(int testNumber) {
-		this.testNumber = testNumber;
-	}
-	public String getType() {
-		return type;
-	}
-	public void setType(String type) {
-		this.type = type;
+		this.moduleNumber = testNumber;
 	}
 	public int getNumFunCall() {
 		return numFunCall;
@@ -78,13 +70,4 @@ public class TestCaseInfo {
 	public void setNumTriggers(int numTriggers) {
 		this.numTriggers = numTriggers;
 	}
-	
-	public void setModuleInfo(TestModuleInfo tmi) {
-		this.numFunCall += tmi.getNumFunCall();
-		this.numAssertions += tmi.getNumAssertions();
-		this.numObjCreation += tmi.getNumObjCreation();
-		this.numTriggers += tmi.getNumTriggers();
-	}
-	
-	
 }

@@ -38,6 +38,7 @@ public class JSASTInstrumentor implements NodeVisitor{
 	private String currentTest = "";
 	private int testCounter = 0;
 	private int asyncTestCounter = 0;
+	private int testModuleCounter = 0;
 	private int assertionCounter = 0;
 	private int newExpressionCounter = 0;
 	private int triggerCounetr = 0;
@@ -46,7 +47,10 @@ public class JSASTInstrumentor implements NodeVisitor{
 	public ArrayList<TestCaseInfo> getTestCaseInfoList() {
 		return testCaseInfoList;
 	}
-
+	private ArrayList<TestModuleInfo> testModuleInfoList = new ArrayList<TestModuleInfo>();
+	public ArrayList<TestModuleInfo> getTestModuleInfoList() {
+		return testModuleInfoList;
+	}
 	private ArrayList<TestUtilityFunctionInfo> testUtilityFunctionInfoList = new ArrayList<TestUtilityFunctionInfo>();
 	public ArrayList<TestUtilityFunctionInfo> getTestUtilityFunctionInfoList() {
 		return testUtilityFunctionInfoList;
@@ -100,16 +104,26 @@ public class JSASTInstrumentor implements NodeVisitor{
 				// should also consider repeated fun calls so removed if(!funCalls.contains(fc)) 
 				funCalls.add(fc);
 		}
-		// calc max, ave, all
-
 		return funCalls;
 	}
-
-
+	
 	public int getFunCallCounterInTest() {
 		return getFunctionCallsInTests().size();
 	}
 
+	public ArrayList<String> getFunctionCallsInTestModules() {
+		ArrayList<String> funCalls = new ArrayList<String>();
+		for (TestModuleInfo tc: testModuleInfoList){
+			for (String fc: tc.getFunctionCalls())
+				funCalls.add(fc);
+		}
+		return funCalls;
+	}
+	public int getFunCallCounterInTestModule() {
+		return getFunctionCallsInTestModules().size();
+	}
+
+	
 	public int getMaxFunctionCallsInTests() {
 		int max = 0;
 		for (TestCaseInfo tc: testCaseInfoList)
@@ -649,9 +663,18 @@ public class JSASTInstrumentor implements NodeVisitor{
 						//System.out.println("f.getLineno(): " + (f.getLineno()+1));
 						//System.out.println("f.getEndLineno(): " + (f.getEndLineno()+1));
 						t.setBeginEndLines(f.getLineno()+1, f.getEndLineno()+1);
-						//System.out.println(t.containsLine(f.getLineno()+1));
-						//System.out.println(t.containsLine(f.getLineno()));
+						//System.out.println(t.containsLine(f.getLineno()+1) + " - " +  t.containsLine(f.getLineno()));
 					}
+				}
+				// add testModule info to the test info
+				if (testModuleInfoList.size()!=0){
+					// retrieving the last testCaseInfo
+					TestModuleInfo tmi = testModuleInfoList.get(testModuleInfoList.size()-1);
+					System.out.println("Adding Module info to test info");
+					System.out.println("t.getNumFunCall(): " + t.getNumFunCall());
+					System.out.println("tmi.getNumFunCall() " + tmi.getNumFunCall());
+					t.setModuleInfo(tmi);
+					System.out.println("t.getNumFunCall(): " + t.getNumFunCall());
 				}
 				testCaseInfoList.add(t);
 			}
@@ -659,20 +682,39 @@ public class JSASTInstrumentor implements NodeVisitor{
 				testCounter++;
 				asyncTestCounter++;
 				TestCaseInfo t = new TestCaseInfo(testCounter, "async");
+				// find begin and end line of code for the test anonym function
+				for (AstNode arg: fcall.getArguments()){
+					if (arg instanceof FunctionNode){
+						FunctionNode f = (FunctionNode) arg;
+						t.setBeginEndLines(f.getLineno()+1, f.getEndLineno()+1);
+					}
+				}
 				testCaseInfoList.add(t);
+			}
+			if (targetNode.toSource().equals("QUnit.module") || targetNode.toSource().equals("module")){
+				testModuleCounter++;
+				TestModuleInfo tmi = new TestModuleInfo(testModuleCounter);
+				// find begin and end line of code for the test anonym function
+				for (AstNode arg: fcall.getArguments()){
+					if (arg instanceof FunctionNode){
+						FunctionNode f = (FunctionNode) arg;
+						tmi.setBeginEndLines(f.getLineno()+1, f.getEndLineno()+1);
+					}
+				}
+				testModuleInfoList.add(tmi);
 			}
 		}			
 
 		if (targetNode.toSource().equals("trigger") || targetNode.toSource().equals("triggerHandler"))
 			triggerCounetr++;
 
-		String[] assertionSkipList = { "assert.expect", "expect", "assert.equal", "equal", "assert.notEqual", "notEqual", "assert.deepEqual", "deepEqual", 
+		String[] qunitAssertionSkipList = { "assert.expect", "expect", "assert.equal", "equal", "assert.notEqual", "notEqual", "assert.deepEqual", "deepEqual", 
 				"assert.notDeepEqual", "notDeepEqual", "assert.strictEqual", "strictEqual", "assert.notStrictEqual", "notStrictEqual", "QUnit.ok", "assert.ok", "ok", "assert.notOk", "notOk", 
 				"assert.propEqual", "propEqual", "assert.notPropEqual", "notPropEqual", "assert.push", "assert.throws", "throws", "assert.async"};		
 
-		String[] otherSkipList = { "QUnit.module", "module", "QUnit.test", "test", "QUnit.asyncTest", "asyncTest", "jQuery", "$" , "start", "stop"}; // start/stop for asynchronous control	
-
-		if (ArrayUtils.contains( assertionSkipList, targetNode.toSource() )){
+		String[] qunitOtherSkipList = { "QUnit.module", "module", "QUnit.test", "test", "QUnit.asyncTest", "asyncTest", "jQuery", "$" , "start", "stop"}; // start/stop for asynchronous control	
+	
+		if (ArrayUtils.contains( qunitAssertionSkipList, targetNode.toSource() )){
 			assertionCounter++;
 			if (testCaseInfoList.size()!=0){
 				TestCaseInfo t = testCaseInfoList.get(testCaseInfoList.size()-1);
@@ -686,7 +728,7 @@ public class JSASTInstrumentor implements NodeVisitor{
 						System.out.println("Test utility function " + tufi.getFuncName() + " has " + tufi.getNumAssertions() + " assertions!");
 						//System.out.println("An assertion found out of a test case");
 
-
+						// *************************************** TOOOODOOOOOO
 						// add to num of assertions
 
 
@@ -696,8 +738,7 @@ public class JSASTInstrumentor implements NodeVisitor{
 				//TestUtilityFunctionInfo tufi = testUtilityFunctionInfoList.get(testUtilityFunctionInfoList.size()-1);
 			}
 		}
-
-		if (ArrayUtils.contains( assertionSkipList, targetNode.toSource() ) || ArrayUtils.contains( otherSkipList, targetNode.toSource() )) {
+		if (ArrayUtils.contains(qunitAssertionSkipList, targetNode.toSource() ) || ArrayUtils.contains( qunitOtherSkipList, targetNode.toSource() )) {
 			System.out.println("Not counting the called function: " + functionName);
 			return;
 		}else{
@@ -711,7 +752,6 @@ public class JSASTInstrumentor implements NodeVisitor{
 					// find begin and end line of code for the test anonym function
 					if (!t.containsLine(fcall.getLineno()+1))
 						return;
-
 
 					int currentNumFunCalls = t.getNumFunCall();
 					// search for a test utility function with the same name as the functionName
@@ -965,6 +1005,14 @@ public class JSASTInstrumentor implements NodeVisitor{
 		this.testCounter = testCounter;
 	}
 
+	public int getTestModuleCounter() {
+		return testModuleCounter;
+	}
+
+	public void setTestModuleCounter(int testModuleCounter) {
+		this.testModuleCounter = testModuleCounter;
+	}
+
 	public int getAsynchTestCounter() {
 		return asyncTestCounter;
 	}
@@ -1141,10 +1189,12 @@ public class JSASTInstrumentor implements NodeVisitor{
 		this.testCounter = 0;
 		this.asyncTestCounter = 0;
 		this.assertionCounter = 0;
+		this.testModuleCounter = 0;
 		this.newExpressionCounter = 0;
 		this.triggerCounetr = 0;
 		this.functionCalls.clear();
 		this.testCaseInfoList.clear();
+		this.testModuleInfoList.clear();
 	}
 
 
