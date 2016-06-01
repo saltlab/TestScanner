@@ -17,6 +17,7 @@ import org.mozilla.javascript.ast.Name;
 import org.mozilla.javascript.ast.InfixExpression;
 import org.mozilla.javascript.ast.NewExpression;
 import org.mozilla.javascript.ast.NodeVisitor;
+import org.mozilla.javascript.ast.ObjectLiteral;
 import org.mozilla.javascript.ast.ObjectProperty;
 
 
@@ -106,7 +107,7 @@ public class JSASTInstrumentor implements NodeVisitor{
 		}
 		return funCalls;
 	}
-	
+
 	public int getFunCallCounterInTest() {
 		return getFunctionCallsInTests().size();
 	}
@@ -123,7 +124,7 @@ public class JSASTInstrumentor implements NodeVisitor{
 		return getFunctionCallsInTestModules().size();
 	}
 
-	
+
 	public int getMaxFunctionCallsInTests() {
 		int max = 0;
 		for (TestCaseInfo tc: testCaseInfoList)
@@ -655,13 +656,10 @@ public class JSASTInstrumentor implements NodeVisitor{
 				testCounter++;
 				// add a new TestCaseInfo object
 				TestCaseInfo t = new TestCaseInfo(testCounter, "sync");
-
 				// find begin and end line of code for the test anonym function
 				for (AstNode arg: fcall.getArguments()){
 					if (arg instanceof FunctionNode){
 						FunctionNode f = (FunctionNode) arg;
-						//System.out.println("f.getLineno(): " + (f.getLineno()+1));
-						//System.out.println("f.getEndLineno(): " + (f.getEndLineno()+1));
 						t.setBeginEndLines(f.getLineno()+1, f.getEndLineno()+1);
 						//System.out.println(t.containsLine(f.getLineno()+1) + " - " +  t.containsLine(f.getLineno()));
 					}
@@ -670,15 +668,15 @@ public class JSASTInstrumentor implements NodeVisitor{
 				if (testModuleInfoList.size()!=0){
 					// retrieving the last testCaseInfo
 					TestModuleInfo tmi = testModuleInfoList.get(testModuleInfoList.size()-1);
+					tmi.setEndLine(fcall.getLineno());
 					System.out.println("Adding Module info to test info");
 					System.out.println("t.getNumFunCall(): " + t.getNumFunCall());
 					System.out.println("tmi.getNumFunCall() " + tmi.getNumFunCall());
-					t.setModuleInfo(tmi);
+					t.addModuleStat(tmi);
 					System.out.println("t.getNumFunCall(): " + t.getNumFunCall());
 				}
 				testCaseInfoList.add(t);
-			}
-			if (targetNode.toSource().equals("QUnit.asyncTest") || targetNode.toSource().equals("asyncTest")){
+			}else if (targetNode.toSource().equals("QUnit.asyncTest") || targetNode.toSource().equals("asyncTest")){
 				testCounter++;
 				asyncTestCounter++;
 				TestCaseInfo t = new TestCaseInfo(testCounter, "async");
@@ -689,31 +687,41 @@ public class JSASTInstrumentor implements NodeVisitor{
 						t.setBeginEndLines(f.getLineno()+1, f.getEndLineno()+1);
 					}
 				}
+				// add testModule info to the test info
+				if (testModuleInfoList.size()!=0){
+					// retrieving the last testCaseInfo
+					TestModuleInfo tmi = testModuleInfoList.get(testModuleInfoList.size()-1);
+					tmi.setEndLine(fcall.getLineno());
+					System.out.println("Adding Module info to test info");
+					System.out.println("t.getNumFunCall(): " + t.getNumFunCall());
+					System.out.println("tmi.getNumFunCall() " + tmi.getNumFunCall());
+					t.addModuleStat(tmi);
+					System.out.println("t.getNumFunCall(): " + t.getNumFunCall());
+				}
 				testCaseInfoList.add(t);
-			}
-			if (targetNode.toSource().equals("QUnit.module") || targetNode.toSource().equals("module")){
+			}else if (targetNode.toSource().equals("QUnit.module") || targetNode.toSource().equals("module")){
+				System.out.println("NEW MODULE FOUND. num = " + testModuleCounter);
 				testModuleCounter++;
 				TestModuleInfo tmi = new TestModuleInfo(testModuleCounter);
 				// find begin and end line of code for the test anonym function
-				for (AstNode arg: fcall.getArguments()){
-					if (arg instanceof FunctionNode){
-						FunctionNode f = (FunctionNode) arg;
-						tmi.setBeginEndLines(f.getLineno()+1, f.getEndLineno()+1);
-					}
-				}
+				tmi.setBeginEndLines(fcall.getLineno()+1, 0);
 				testModuleInfoList.add(tmi);
 			}
 		}			
 
-		if (targetNode.toSource().equals("trigger") || targetNode.toSource().equals("triggerHandler"))
+		if (targetNode.toSource().equals("trigger") || targetNode.toSource().equals("triggerHandler")){
 			triggerCounetr++;
+			return;
+		}
 
+
+		String[] qunitOtherSkipList = { "QUnit.module", "module", "QUnit.test", "test", "QUnit.asyncTest", "asyncTest", "jQuery", "$" , "start", "stop"}; // start/stop for asynchronous control	
+
+		
 		String[] qunitAssertionSkipList = { "assert.expect", "expect", "assert.equal", "equal", "assert.notEqual", "notEqual", "assert.deepEqual", "deepEqual", 
 				"assert.notDeepEqual", "notDeepEqual", "assert.strictEqual", "strictEqual", "assert.notStrictEqual", "notStrictEqual", "QUnit.ok", "assert.ok", "ok", "assert.notOk", "notOk", 
 				"assert.propEqual", "propEqual", "assert.notPropEqual", "notPropEqual", "assert.push", "assert.throws", "throws", "assert.async"};		
 
-		String[] qunitOtherSkipList = { "QUnit.module", "module", "QUnit.test", "test", "QUnit.asyncTest", "asyncTest", "jQuery", "$" , "start", "stop"}; // start/stop for asynchronous control	
-	
 		if (ArrayUtils.contains( qunitAssertionSkipList, targetNode.toSource() )){
 			assertionCounter++;
 			if (testCaseInfoList.size()!=0){
@@ -727,34 +735,40 @@ public class JSASTInstrumentor implements NodeVisitor{
 						tufi.setNumAssertions(tufi.getNumAssertions()+1);
 						System.out.println("Test utility function " + tufi.getFuncName() + " has " + tufi.getNumAssertions() + " assertions!");
 						//System.out.println("An assertion found out of a test case");
-
-						// *************************************** TOOOODOOOOOO
-						// add to num of assertions
-
-
 						break;
 					}
 				}
-				//TestUtilityFunctionInfo tufi = testUtilityFunctionInfoList.get(testUtilityFunctionInfoList.size()-1);
 			}
 		}
+		
+		
 		if (ArrayUtils.contains(qunitAssertionSkipList, targetNode.toSource() ) || ArrayUtils.contains( qunitOtherSkipList, targetNode.toSource() )) {
 			System.out.println("Not counting the called function: " + functionName);
 			return;
 		}else{
-			System.out.println("Counting the called function: " + functionName + " with enclosingFunction: " + enclosingFunction);
+			// checking line number to decide if fun call is in a test case or a module or a test utility function 
+			int callLineNum = fcall.getLineno()+1;
+			boolean callInTestCase = false, callInTestModule = false;
 			if (testCaseInfoList.size()!=0){
 				// retrieving the last testCaseInfo
 				TestCaseInfo t = testCaseInfoList.get(testCaseInfoList.size()-1);
+				if (t.containsLine(callLineNum))
+					callInTestCase = true;
+				else if (testModuleInfoList.size()!=0){					
+					// retrieving the last testModuleInfo
+					TestModuleInfo tmi = testModuleInfoList.get(testModuleInfoList.size()-1);
+					if (tmi.containsLine(callLineNum))
+						callInTestModule = true;
+				}
+			}
 
-				// check if funCall is inside test function body
+			System.out.println("Counting the called function: " + functionName + " with enclosingFunction: " + enclosingFunction);
+
+			if (callInTestCase == true){
+				TestCaseInfo t = testCaseInfoList.get(testCaseInfoList.size()-1);
+				int currentNumFunCalls = t.getNumFunCall();
 				if (testsFramework.equals("qunit")){
-					// find begin and end line of code for the test anonym function
-					if (!t.containsLine(fcall.getLineno()+1))
-						return;
-
-					int currentNumFunCalls = t.getNumFunCall();
-					// search for a test utility function with the same name as the functionName
+					// check if a test utility function exist with the same name as the functionName
 					boolean testUtilFunCall = false;
 					for(TestUtilityFunctionInfo tufi: testUtilityFunctionInfoList){
 						if (tufi.getFuncName().equals(functionName)){
@@ -763,6 +777,10 @@ public class JSASTInstrumentor implements NodeVisitor{
 							System.out.println("Adding function calls in the test utility function: " + tufi.getFunctionCalls());
 							for(String fc: tufi.getFunctionCalls())
 								t.addFunctionCall(fc);
+
+							// also add assertions
+							t.setNumAssertions(t.getNumAssertions() + tufi.getNumAssertions());
+
 							testUtilFunCall = true;
 							break;
 						}
@@ -776,9 +794,37 @@ public class JSASTInstrumentor implements NodeVisitor{
 					}
 
 					System.out.println("Test case " + t.getTestNumber() + " has " + t.getNumFunCall() + " function calls!");
-
 				}
+			}else if(callInTestModule == true){
+				TestModuleInfo tmi = testModuleInfoList.get(testModuleInfoList.size()-1);
+				int currentNumFunCalls = tmi.getNumFunCall();
+				if (testsFramework.equals("qunit")){
+					// check if a test utility function exist with the same name as the functionName
+					boolean testUtilFunCall = false;
+					for(TestUtilityFunctionInfo tufi: testUtilityFunctionInfoList){
+						if (tufi.getFuncName().equals(functionName)){
+							System.out.println("The called function " + functionName + " is a test utility function with " + tufi.getNumFunCall() + " function calls! Adding to the test module info...");
+							currentNumFunCalls += tufi.getNumFunCall();
+							System.out.println("Adding function calls in the test utility function: " + tufi.getFunctionCalls());
+							for(String fc: tufi.getFunctionCalls())
+								tmi.addFunctionCall(fc);
 
+							// also add assertions
+							tmi.setNumAssertions(tmi.getNumAssertions() + tufi.getNumAssertions());
+
+							testUtilFunCall = true;
+							break;
+						}
+					}
+					if (testUtilFunCall==false){
+						tmi.setNumFunCall(currentNumFunCalls+1);
+						tmi.addFunctionCall(functionName);
+					}
+					else{
+						tmi.setNumFunCall(currentNumFunCalls);  // do not add the call to the test utility function
+					}
+					System.out.println("Test module " + tmi.getModuleNumber() + " has " + tmi.getNumFunCall() + " function calls!");
+				}
 			}else{
 				// search for a test utility function with the same name as the enclosingFunction
 				for(TestUtilityFunctionInfo tufi: testUtilityFunctionInfoList){
@@ -791,12 +837,12 @@ public class JSASTInstrumentor implements NodeVisitor{
 						break;
 					}
 				}
-				//TestUtilityFunctionInfo tufi = testUtilityFunctionInfoList.get(testUtilityFunctionInfoList.size()-1);
 			}
 		}
-
 	}
 
+
+	
 	private void instrumentFunctionCallNode(AstNode node) {
 		System.out.println("=== instrumentFunctionCallNode ===");
 		// getting the enclosing function name

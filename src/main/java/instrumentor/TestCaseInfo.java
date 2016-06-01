@@ -79,7 +79,7 @@ public class TestCaseInfo {
 		this.numTriggers = numTriggers;
 	}
 	
-	public void setModuleInfo(TestModuleInfo tmi) {
+	public void addModuleStat(TestModuleInfo tmi) {
 		this.numFunCall += tmi.getNumFunCall();
 		this.numAssertions += tmi.getNumAssertions();
 		this.numObjCreation += tmi.getNumObjCreation();

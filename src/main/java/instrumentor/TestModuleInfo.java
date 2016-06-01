@@ -32,7 +32,14 @@ public class TestModuleInfo {
 		this.endLineNum = end;
 	}
 	
+	public void setEndLine(int end){
+		this.endLineNum = end;
+	}
+
 	public boolean containsLine(int lineNum){
+		if (endLineNum == 0 && lineNum >= beginLineNum)
+				return true;
+		
 		if (lineNum >= beginLineNum && lineNum <= endLineNum)
 			return true;
 		System.out.println("Line " + lineNum + " is out of test function [" + beginLineNum + "-" + endLineNum + "]");
@@ -40,7 +47,7 @@ public class TestModuleInfo {
 	}
 
 	
-	public int getTestNumber() {
+	public int getModuleNumber() {
 		return moduleNumber;
 	}
 	public void setTestNumber(int testNumber) {
