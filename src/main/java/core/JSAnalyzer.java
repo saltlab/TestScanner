@@ -479,7 +479,8 @@ public class JSAnalyzer {
 		
 			NumTests = astVisitor.getTestCounter();
 			NumAsyncTests = astVisitor.getAsynchTestCounter();
-			NumAssertions = astVisitor.getAssertionCounter();
+			//NumAssertions = astVisitor.getAssertionCounter();  // => this does not consider assert in modules
+			NumAssertions =  astVisitor.getNumAssertInTests();
 			NumTestModules = astVisitor.getTestModuleCounter();
 			NumFunCallTest = astVisitor.getFunCallCounterInTest();
 			NumFunCallTestModule = astVisitor.getFunCallCounterInTestModule();

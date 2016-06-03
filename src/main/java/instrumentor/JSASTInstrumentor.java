@@ -17,7 +17,6 @@ import org.mozilla.javascript.ast.Name;
 import org.mozilla.javascript.ast.InfixExpression;
 import org.mozilla.javascript.ast.NewExpression;
 import org.mozilla.javascript.ast.NodeVisitor;
-import org.mozilla.javascript.ast.ObjectLiteral;
 import org.mozilla.javascript.ast.ObjectProperty;
 
 
@@ -97,6 +96,13 @@ public class JSASTInstrumentor implements NodeVisitor{
 	}
 
 	private ArrayList<String> functionCalls = new ArrayList<String>();
+
+	public int getNumAssertInTests() {
+		int num = 0;
+		for (TestCaseInfo tc: testCaseInfoList)
+			num += tc.getNumAssertions();
+		return num;
+	}
 
 	public ArrayList<String> getFunctionCallsInTests() {
 		ArrayList<String> funCalls = new ArrayList<String>();
@@ -717,32 +723,13 @@ public class JSASTInstrumentor implements NodeVisitor{
 
 		String[] qunitOtherSkipList = { "QUnit.module", "module", "QUnit.test", "test", "QUnit.asyncTest", "asyncTest", "jQuery", "$" , "start", "stop"}; // start/stop for asynchronous control	
 
-		
+
 		String[] qunitAssertionSkipList = { "assert.expect", "expect", "assert.equal", "equal", "assert.notEqual", "notEqual", "assert.deepEqual", "deepEqual", 
 				"assert.notDeepEqual", "notDeepEqual", "assert.strictEqual", "strictEqual", "assert.notStrictEqual", "notStrictEqual", "QUnit.ok", "assert.ok", "ok", "assert.notOk", "notOk", 
 				"assert.propEqual", "propEqual", "assert.notPropEqual", "notPropEqual", "assert.push", "assert.throws", "throws", "assert.async"};		
 
-		if (ArrayUtils.contains( qunitAssertionSkipList, targetNode.toSource() )){
-			assertionCounter++;
-			if (testCaseInfoList.size()!=0){
-				TestCaseInfo t = testCaseInfoList.get(testCaseInfoList.size()-1);
-				t.setNumAssertions(t.getNumAssertions()+1);
-				System.out.println("Test case " + t.getTestNumber() + " has " + t.getNumAssertions() + " assertions!");
-			}else{
-				// search for a test utility function with the same name as the enclosingFunction
-				for(TestUtilityFunctionInfo tufi: testUtilityFunctionInfoList){
-					if (tufi.getFuncName().equals(enclosingFunction)){
-						tufi.setNumAssertions(tufi.getNumAssertions()+1);
-						System.out.println("Test utility function " + tufi.getFuncName() + " has " + tufi.getNumAssertions() + " assertions!");
-						//System.out.println("An assertion found out of a test case");
-						break;
-					}
-				}
-			}
-		}
-		
-		
-		if (ArrayUtils.contains(qunitAssertionSkipList, targetNode.toSource() ) || ArrayUtils.contains( qunitOtherSkipList, targetNode.toSource() )) {
+
+		if (ArrayUtils.contains( qunitOtherSkipList, targetNode.toSource() )) {
 			System.out.println("Not counting the called function: " + functionName);
 			return;
 		}else{
@@ -768,81 +755,112 @@ public class JSASTInstrumentor implements NodeVisitor{
 				TestCaseInfo t = testCaseInfoList.get(testCaseInfoList.size()-1);
 				int currentNumFunCalls = t.getNumFunCall();
 				if (testsFramework.equals("qunit")){
-					// check if a test utility function exist with the same name as the functionName
-					boolean testUtilFunCall = false;
-					for(TestUtilityFunctionInfo tufi: testUtilityFunctionInfoList){
-						if (tufi.getFuncName().equals(functionName)){
-							System.out.println("The called function " + functionName + " is a test utility function with " + tufi.getNumFunCall() + " function calls! Adding to the test info...");
-							currentNumFunCalls += tufi.getNumFunCall();
-							System.out.println("Adding function calls in the test utility function: " + tufi.getFunctionCalls());
-							for(String fc: tufi.getFunctionCalls())
-								t.addFunctionCall(fc);
 
-							// also add assertions
-							t.setNumAssertions(t.getNumAssertions() + tufi.getNumAssertions());
+					// check if the called function is actually an assertion function
+					if (ArrayUtils.contains( qunitAssertionSkipList, targetNode.toSource() )){
+						assertionCounter++;
+						t.setNumAssertions(t.getNumAssertions()+1);
+						System.out.println("Test case " + t.getTestNumber() + " has " + t.getNumAssertions() + " assertions!");
+					}else{
+						// check if a test utility function exist with the same name as the functionName
+						boolean testUtilFunCall = false;
+						for(TestUtilityFunctionInfo tufi: testUtilityFunctionInfoList){
+							if (tufi.getFuncName().equals(functionName)){
+								System.out.println("The called function " + functionName + " is a test utility function with " + tufi.getNumFunCall() + " function calls! Adding to the test info...");
+								currentNumFunCalls += tufi.getNumFunCall();
+								System.out.println("Adding function calls in the test utility function: " + tufi.getFunctionCalls());
+								for(String fc: tufi.getFunctionCalls())
+									t.addFunctionCall(fc);
 
-							testUtilFunCall = true;
-							break;
+								// also add assertions
+								t.setNumAssertions(t.getNumAssertions() + tufi.getNumAssertions());
+
+								testUtilFunCall = true;
+								break;
+							}
 						}
-					}
-					if (testUtilFunCall==false){
-						t.setNumFunCall(currentNumFunCalls+1);
-						t.addFunctionCall(functionName);
-					}
-					else{
-						t.setNumFunCall(currentNumFunCalls);  // do not add the call to the test utility function
-					}
+						if (testUtilFunCall==false){
+							t.setNumFunCall(currentNumFunCalls+1);
+							t.addFunctionCall(functionName);
+						}
+						else{
+							t.setNumFunCall(currentNumFunCalls);  // do not add the call to the test utility function
+						}
 
-					System.out.println("Test case " + t.getTestNumber() + " has " + t.getNumFunCall() + " function calls!");
+						System.out.println("Test case " + t.getTestNumber() + " has " + t.getNumFunCall() + " function calls!");
+					}
 				}
 			}else if(callInTestModule == true){
 				TestModuleInfo tmi = testModuleInfoList.get(testModuleInfoList.size()-1);
 				int currentNumFunCalls = tmi.getNumFunCall();
 				if (testsFramework.equals("qunit")){
-					// check if a test utility function exist with the same name as the functionName
-					boolean testUtilFunCall = false;
+
+					// check if the called function is actually an assertion function
+					if (ArrayUtils.contains( qunitAssertionSkipList, targetNode.toSource() )){
+						assertionCounter++;
+						tmi.setNumAssertions(tmi.getNumAssertions()+1);
+						System.out.println("Test module " + tmi.getModuleNumber() + " has " + tmi.getNumAssertions() + " assertions!");
+					}else{
+						// check if a test utility function exist with the same name as the functionName
+						boolean testUtilFunCall = false;
+						for(TestUtilityFunctionInfo tufi: testUtilityFunctionInfoList){
+							if (tufi.getFuncName().equals(functionName)){
+								System.out.println("The called function " + functionName + " is a test utility function with " + tufi.getNumFunCall() + " function calls! Adding to the test module info...");
+								currentNumFunCalls += tufi.getNumFunCall();
+								System.out.println("Adding function calls in the test utility function: " + tufi.getFunctionCalls());
+								for(String fc: tufi.getFunctionCalls())
+									tmi.addFunctionCall(fc);
+
+								// also add assertions
+								tmi.setNumAssertions(tmi.getNumAssertions() + tufi.getNumAssertions());
+
+								testUtilFunCall = true;
+								break;
+							}
+						}
+						if (testUtilFunCall==false){
+							tmi.setNumFunCall(currentNumFunCalls+1);
+							tmi.addFunctionCall(functionName);
+						}
+						else{
+							tmi.setNumFunCall(currentNumFunCalls);  // do not add the call to the test utility function
+						}
+						System.out.println("Test module " + tmi.getModuleNumber() + " has " + tmi.getNumFunCall() + " function calls!");
+					}
+				}
+			}else{
+
+				// check if the called function in a test utility function is actually an assertion function
+				if (ArrayUtils.contains( qunitAssertionSkipList, targetNode.toSource() )){
+					// search for a test utility function with the same name as the enclosingFunction
 					for(TestUtilityFunctionInfo tufi: testUtilityFunctionInfoList){
-						if (tufi.getFuncName().equals(functionName)){
-							System.out.println("The called function " + functionName + " is a test utility function with " + tufi.getNumFunCall() + " function calls! Adding to the test module info...");
-							currentNumFunCalls += tufi.getNumFunCall();
-							System.out.println("Adding function calls in the test utility function: " + tufi.getFunctionCalls());
-							for(String fc: tufi.getFunctionCalls())
-								tmi.addFunctionCall(fc);
-
-							// also add assertions
-							tmi.setNumAssertions(tmi.getNumAssertions() + tufi.getNumAssertions());
-
-							testUtilFunCall = true;
+						if (tufi.getFuncName().equals(enclosingFunction)){
+							tufi.setNumAssertions(tufi.getNumAssertions()+1);
+							System.out.println("Test utility function " + tufi.getFuncName() + " has " + tufi.getNumAssertions() + " assertions!");
+							//System.out.println("An assertion found out of a test case");
 							break;
 						}
 					}
-					if (testUtilFunCall==false){
-						tmi.setNumFunCall(currentNumFunCalls+1);
-						tmi.addFunctionCall(functionName);
-					}
-					else{
-						tmi.setNumFunCall(currentNumFunCalls);  // do not add the call to the test utility function
-					}
-					System.out.println("Test module " + tmi.getModuleNumber() + " has " + tmi.getNumFunCall() + " function calls!");
-				}
-			}else{
-				// search for a test utility function with the same name as the enclosingFunction
-				for(TestUtilityFunctionInfo tufi: testUtilityFunctionInfoList){
-					if (tufi.getFuncName().equals(enclosingFunction)){
-						tufi.setNumFunCall(tufi.getNumFunCall()+1);
-						System.out.println("Test utility function " + tufi.getFuncName() + " has " + tufi.getNumFunCall() + " function calls!");
-						//System.out.println("A function call found out of a test case");
-						tufi.addFunctionCall(functionName);
-						System.out.println("Adding to the list of function calls for the test utility function: " + tufi.getFunctionCalls());
-						break;
+				}else{
+					// search for a test utility function with the same name as the enclosingFunction
+					for(TestUtilityFunctionInfo tufi: testUtilityFunctionInfoList){
+						if (tufi.getFuncName().equals(enclosingFunction)){
+							tufi.setNumFunCall(tufi.getNumFunCall()+1);
+							System.out.println("Test utility function " + tufi.getFuncName() + " has " + tufi.getNumFunCall() + " function calls!");
+							//System.out.println("A function call found out of a test case");
+							tufi.addFunctionCall(functionName);
+							System.out.println("Adding to the list of function calls for the test utility function: " + tufi.getFunctionCalls());
+							break;
+						}
 					}
 				}
+
 			}
 		}
 	}
 
 
-	
+
 	private void instrumentFunctionCallNode(AstNode node) {
 		System.out.println("=== instrumentFunctionCallNode ===");
 		// getting the enclosing function name
