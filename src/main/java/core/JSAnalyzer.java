@@ -494,7 +494,7 @@ public class JSAnalyzer {
 			System.out.println("NumTestModules: " + NumTestModules);
 			System.out.println("NumAssertions: " + NumAssertions);
 			System.out.println("NumFunCallTest: " + NumFunCallTest);
-			System.out.println("NumFunCallTest: " + NumFunCallTestModule);
+			System.out.println("NumFunCallTestModule: " + NumFunCallTestModule);
 			System.out.println("NumTotalFunCall: " + NumTotalFunCall);
 			System.out.println("MaxNumFunCallTest: " + MaxNumFunCallTest);
 			System.out.println("NumTriggerTest: " + NumTriggerTest);

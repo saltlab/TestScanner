@@ -28,8 +28,24 @@ import core.TraceAnalyzer;
 
 public class TestCodePropertyAnalyzer {
 
-	private static String testsFolder = "/Users/aminmf/Documents/JavaScriptTestsStudy/popularJS/jquery-mobile/tests/";
-	private static String[] excludeFolders = { "casperjs"};		
+	//private static String testsFolder = "/Users/aminmf/Documents/JavaScriptTestsStudy/popularJS/fullPage.js/tests";
+	//private static String testsFolder = "/Users/aminmf/Documents/JavaScriptTestsStudy/popularJS/skrollr/test/";
+	//private static String testsFolder = "/Users/aminmf/Documents/JavaScriptTestsStudy/popularJS/velocity/test/";
+	//private static String testsFolder = "/Users/aminmf/Documents/JavaScriptTestsStudy/popularJS/lazysizes/tests/";   // => QUnit.test.apply
+	// private static String testsFolder = "/Users/aminmf/Documents/JavaScriptTestsStudy/popularJS/ember.js/tests/"; => Wrong answer! also consider node-test folder
+	// private static String testsFolder = "/Users/aminmf/Documents/JavaScriptTestsStudy/popularJS/sizzle/test/"; => Wrong answer!
+	//private static String testsFolder = "/Users/aminmf/Documents/JavaScriptTestsStudy/popularJS/bootstrap/js/tests/"; => Wrong answer!
+	//private static String testsFolder = "/Users/aminmf/Documents/JavaScriptTestsStudy/popularJS/backbone/test/"; 
+	//private static String testsFolder = "/Users/aminmf/Documents/JavaScriptTestsStudy/popularJS/underscore/test/"; 
+	//private static String testsFolder = "/Users/aminmf/Documents/JavaScriptTestsStudy/popularJS/lodash/test/";  => Wrong answer!
+	//private static String testsFolder = "/Users/aminmf/Documents/JavaScriptTestsStudy/popularJS/hogan.js/test/";
+	//private static String testsFolder = "/Users/aminmf/Documents/JavaScriptTestsStudy/popularJS/moment/src/test/";
+	private static String testsFolder = "/Users/aminmf/Documents/JavaScriptTestsStudy/popularJS/fabric.js/test/";
+	
+	
+	
+	
+	private static String[] excludeFolders = { "coverage", "lib", "casper"};		
 	private static String testsFramework = "qunit";  // {"qunit", "jasmine", "mocha"}
 	
 
@@ -82,7 +98,7 @@ public class TestCodePropertyAnalyzer {
 		if (file.isFile()) {
 			String fileName = file.getName();
 			//if (fileName.endsWith(".js")){
-			if (!fileName.contains("qunit") && fileName.endsWith(".js")) {
+			if (!fileName.contains("qunit") && fileName.endsWith(".js") && !fileName.contains("jquery")) {
 				//&& !fileName.equals("es.js") && !fileName.equals("helpers.js") && !fileName.equals("karma.conf.js") && !fileName.equals("es.js") && !fileName.equals("library.js")
 				//){
 				analyseJSTestFile(file.getCanonicalPath());
@@ -140,7 +156,8 @@ public class TestCodePropertyAnalyzer {
 		System.out.println("++++ NumTriggerInTest: " + NumTriggerInTest);
 		System.out.println("++++ NumObjCreate: " + NumObjCreate);
 		System.out.println("==========================");
-		
+
+		System.out.println(NumTests + "\t" + NumAsyncTests + "\t" + NumTestModules + "\t" + NumAssertions + "\t" + NumFunCallTest + "\t" + MaxFunCall + "\t" + AveFunCall + "\t" + NumTriggerInTest + "\t" + NumObjCreate);
 	}
 
 	

@@ -508,8 +508,8 @@ public class JSASTInstrumentor implements NodeVisitor{
 		}
 
 		AstNode parentNode = node.getParent();
-		String parentNodeSource = parentNode.toSource();
-		String parentNodeName = parentNode.shortName();
+		//String parentNodeSource = parentNode.toSource();
+		//String parentNodeName = parentNode.shortName();
 		//System.out.println("shortName: " + shortName);
 		//System.out.println("parentNodeName: " + parentNodeName);
 
