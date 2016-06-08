@@ -28,25 +28,30 @@ import core.TraceAnalyzer;
 
 public class TestCodePropertyAnalyzer {
 
-	//private static String testsFolder = "/Users/aminmf/Documents/JavaScriptTestsStudy/popularJS/fullPage.js/tests";
-	//private static String testsFolder = "/Users/aminmf/Documents/JavaScriptTestsStudy/popularJS/skrollr/test/";
+	//private static String testsFramework = "qunit";  // {"qunit", "jasmine", "mocha"}
 	//private static String testsFolder = "/Users/aminmf/Documents/JavaScriptTestsStudy/popularJS/velocity/test/";
 	//private static String testsFolder = "/Users/aminmf/Documents/JavaScriptTestsStudy/popularJS/lazysizes/tests/";   // => QUnit.test.apply
-	// private static String testsFolder = "/Users/aminmf/Documents/JavaScriptTestsStudy/popularJS/ember.js/tests/"; => Wrong answer! also consider node-test folder
-	// private static String testsFolder = "/Users/aminmf/Documents/JavaScriptTestsStudy/popularJS/sizzle/test/"; => Wrong answer!
-	//private static String testsFolder = "/Users/aminmf/Documents/JavaScriptTestsStudy/popularJS/bootstrap/js/tests/"; => Wrong answer!
-	//private static String testsFolder = "/Users/aminmf/Documents/JavaScriptTestsStudy/popularJS/backbone/test/"; 
-	//private static String testsFolder = "/Users/aminmf/Documents/JavaScriptTestsStudy/popularJS/underscore/test/"; 
-	//private static String testsFolder = "/Users/aminmf/Documents/JavaScriptTestsStudy/popularJS/lodash/test/";  => Wrong answer!
-	//private static String testsFolder = "/Users/aminmf/Documents/JavaScriptTestsStudy/popularJS/hogan.js/test/";
+	//private static String testsFolder = "/Users/aminmf/Documents/JavaScriptTestsStudy/popularJS/ember.js/tests/"; => Wrong answer! also consider node-test folder
+	//private static String testsFolder = "/Users/aminmf/Documents/JavaScriptTestsStudy/popularJS/sizzle/test/"; => Wrong answer!
 	//private static String testsFolder = "/Users/aminmf/Documents/JavaScriptTestsStudy/popularJS/moment/src/test/";
-	private static String testsFolder = "/Users/aminmf/Documents/JavaScriptTestsStudy/popularJS/fabric.js/test/";
+		
+
+	private static String testsFramework = "jasmine";
+	private static String testsFolder = "/Users/aminmf/Documents/JavaScriptTestsStudy/popularJS/dropzone/test";
+
 	
 	
+	//private static String testsFramework = "mocha";
+	//private static String testsFolder = "/Users/aminmf/Documents/JavaScriptTestsStudy/popularJS/dropzone/test";
+	//private static String testsFolder = "/Users/aminmf/Documents/JavaScriptTestsStudy/popularJS/material-ui/test";
+	//private static String testsFolder = "/Users/aminmf/Documents/JavaScriptTestsStudy/popularJS/redux/test";
+	//private static String testsFolder = "/Users/aminmf/Documents/JavaScriptTestsStudy/popularJS/snabbt.js/src/tests";
+	//private static String testsFolder = "/Users/aminmf/Documents/JavaScriptTestsStudy/popularJS/webpack/test";
+	//private static String testsFolder = "/Users/aminmf/Documents/JavaScriptTestsStudy/popularJS/component/test";
+
+		
 	
-	
-	private static String[] excludeFolders = { "coverage", "lib", "casper"};		
-	private static String testsFramework = "qunit";  // {"qunit", "jasmine", "mocha"}
+	private static String[] excludeFolders = {"assets", "coverage", "lib", "libs", "casper", "lcov-report"	};		
 	
 
 	private static ArrayList<String> jsFileNames = new ArrayList<String>();

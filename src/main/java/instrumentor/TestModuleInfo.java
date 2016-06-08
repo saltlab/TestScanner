@@ -26,27 +26,28 @@ public class TestModuleInfo {
 			System.out.println("Repeated!");
 	}
 
-	
+
 	public void setBeginEndLines(int begin, int end){
 		this.beginLineNum = begin;
 		this.endLineNum = end;
 	}
-	
+
 	public void setEndLine(int end){
 		this.endLineNum = end;
 	}
 
 	public boolean containsLine(int lineNum){
-		if (endLineNum == 0 && lineNum >= beginLineNum)
-				return true;
-		
+		if (endLineNum == 0 && lineNum >= beginLineNum){
+			System.out.println("Line " + lineNum + " is in a test module [" + beginLineNum + "-" + endLineNum + "]");
+			return true;
+		}
 		if (lineNum >= beginLineNum && lineNum <= endLineNum)
 			return true;
-		System.out.println("Line " + lineNum + " is out of test function [" + beginLineNum + "-" + endLineNum + "]");
+		System.out.println("Line " + lineNum + " is out of a test module [" + beginLineNum + "-" + endLineNum + "]");
 		return false;
 	}
 
-	
+
 	public int getModuleNumber() {
 		return moduleNumber;
 	}
