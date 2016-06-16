@@ -719,7 +719,7 @@ public class JSASTInstrumentor implements NodeVisitor{
 		}
 
 
-		if (targetNode.toSource().equals("trigger") || targetNode.toSource().equals("triggerHandler")){
+		if (targetNode.toSource().equals("trigger") || targetNode.toSource().equals("triggerHandler") || targetNode.toSource().equals("emit")){
 			triggerCounetr++;
 			return;
 		}
@@ -927,7 +927,7 @@ public class JSASTInstrumentor implements NodeVisitor{
 			setAsynchTestCounter(getAsynchTestCounter() + 1);
 		}
 
-		if (targetNode.toSource().equals("trigger") || targetNode.toSource().equals("triggerHandler"))
+		if (targetNode.toSource().equals("trigger") || targetNode.toSource().equals("triggerHandler")  || targetNode.toSource().equals("emit"))
 			setTriggerCounetr(getTriggerCounetr() + 1);
 
 		String[] assertionSkipList = { "assert.expect", "expect", "assert.equal", "equal", "assert.notEqual", "notEqual", "assert.deepEqual", "deepEqual", 
@@ -1199,11 +1199,16 @@ public class JSASTInstrumentor implements NodeVisitor{
 		trigger() 	Triggers all events bound to the selected elements
 		triggerHandler() 	Triggers all functions bound to a specified event for the selected elements
 		unload() 	Deprecated in version 1.8. Attaches an event handler to the unload event
+		
+		
+		
+		 Node.js EventEmitter => emit()  : .emit(event, data, ...)
+		
 		 */
 
 		String[] eventMethods = { ".bind", ".blur", ".change", ".click", ".dblclick", ".delegate", ".error", ".focus", 
 				".focusin", ".focusout", ".hover", ".keydown", ".keypress", ".keyup", ".live", ".load", ".mousedown", ".mouseenter", ".mouseleave", ".mousemove",  
-				".mouseout", ".mouseover", ".mouseup", ".on", ".one", ".ready", ".resize", ".scroll", ".select", ".submit", ".toggle", ".trigger", ".triggerHandler", ".unload",
+				".mouseout", ".mouseover", ".mouseup", ".on", ".one", ".ready", ".resize", ".scroll", ".select", ".submit", ".toggle", ".trigger", ".triggerHandler", ".emit", ".unload",
 
 				".addEventListener", ".attachEvent",
 
