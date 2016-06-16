@@ -1,12 +1,12 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>1.0.0</modelVersion>
-	<groupId>com.confix</groupId>
-	<artifactId>testDependency</artifactId>
+	<groupId>com.testscanner</groupId>
+	<artifactId>TestScanner</artifactId>
 	<version>0.1-SNAPSHOT</version>
-	<name>JavaScript unit test dependency analyzer</name>
-	<description>This tool generates a report on the number of functions called within a unit test for JavaScript applications.</description>
-	<inceptionYear>2015</inceptionYear>
+	<name>JavaScript test analyzer</name>
+	<description>TestScanner is a tool for analyzing JavaScript tests.</description>
+	<inceptionYear>2016</inceptionYear>
 
 	<developers>
 		<developer>
