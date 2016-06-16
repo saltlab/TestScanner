@@ -8,3 +8,8 @@ Given a JavaScript application test folder, it extracts the following metrics: N
 Given a JavaScript test coverage report, it extracts: Percentage of missed statements in missed functions, and coverage for regular functions, callback functions, asynchronous callbacks, event-dependent callbacks, and closures.
 
 In addition, given a URL to a Github repo for a JavaScript application it extracts these metrics from the repository: Number of watches, stars, forks, commits, branches, releases, and contributors.
+
+Instructions
+-----------------
+
+TBA.
