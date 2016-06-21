@@ -85,6 +85,16 @@ public class JSAnalyzer {
 		return missedRegularFunc;
 	}
 
+	private int coveredDOMAccess = 0;
+	public int getCoveredDOMAccess() {
+		return coveredDOMAccess;
+	}
+
+	private int missedDOMAccess = 0;
+	public int getMissedDOMAccess() {
+		return missedDOMAccess;
+	}
+
 	private int neverExecFunCallSites = 0;
 	public int getNeverExecFunCallSites() {
 		return neverExecFunCallSites;
@@ -368,8 +378,6 @@ public class JSAnalyzer {
 				}
 			}
 
-			
-			
 			coveredRegularFunc = astVisitor.getCoveredRegularFunc();
 			missedRegularFunc = astVisitor.getMissedRegularFunc();
 			coveredCallback = astVisitor.getCoveredCallback();
@@ -380,22 +388,25 @@ public class JSAnalyzer {
 			missedEventCallback = astVisitor.getMissedEventCallback();
 			coveredClosure = astVisitor.getCoveredClosure();
 			missedClosure = astVisitor.getMissedClosure();
+			coveredDOMAccess = astVisitor.getCoveredDOMAccessLines().size();
+			missedDOMAccess = astVisitor.getMissedDOMAccessLines().size();
 
-			
-			System.out.println("++++ coveredRegularFunc: " + astVisitor.getCoveredRegularFunc());
-			System.out.println("++++ missedRegularFunc: " + astVisitor.getMissedRegularFunc());
-			System.out.println("++++ coveredCallback: " + astVisitor.getCoveredCallback());
-			System.out.println("++++ missedCallback: " + astVisitor.getMissedCallback());
-			System.out.println("++++ coveredAsyncCallback: " + astVisitor.getCoveredAsyncCallback());
-			System.out.println("++++ missedAsyncCallback: " + astVisitor.getMissedAsyncCallback());
-			System.out.println("++++ coveredEventCallback: " + astVisitor.getCoveredAsyncCallback());
-			System.out.println("++++ missedEventCallback: " + astVisitor.getMissedEventCallback());
-			System.out.println("++++ coveredClosure: " + astVisitor.getCoveredClosure());
-			System.out.println("++++ missedClosure: " + astVisitor.getMissedClosure());
+			System.out.println("++++ coveredRegularFunc: " + coveredRegularFunc);
+			System.out.println("++++ missedRegularFunc: " + missedRegularFunc);
+			System.out.println("++++ coveredCallback: " + coveredCallback);
+			System.out.println("++++ missedCallback: " + missedCallback);
+			System.out.println("++++ coveredAsyncCallback: " + coveredAsyncCallback);
+			System.out.println("++++ missedAsyncCallback: " + missedAsyncCallback);
+			System.out.println("++++ coveredEventCallback: " + coveredEventCallback);
+			System.out.println("++++ missedEventCallback: " + missedEventCallback);
+			System.out.println("++++ coveredClosure: " + coveredClosure);
+			System.out.println("++++ missedClosure: " + missedClosure);
+
+			System.out.println("++++ coveredDOMAccess: " + coveredDOMAccess);
+			System.out.println("++++ missedDOMAccess: " + missedDOMAccess);
 
 			System.out.println("++++ neverExecFunCallSites: " + neverExecFunCallSites);
-			
-			
+						
 			ArrayList<Integer> msimf = astVisitor.getMissedStatementInMissedFunction();
 			//System.out.println("msimf: " + msimf);
 			for (int i=0; i<msimf.size(); i++){

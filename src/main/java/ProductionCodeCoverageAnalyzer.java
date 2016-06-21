@@ -40,7 +40,7 @@ public class ProductionCodeCoverageAnalyzer {
 	//private static String subjectCoverageFolder = "ButtonsCoverageReport";
 	//private static String subjectCoverageFolder = "jquery-placeholderCoverageReport";
 	//private static String subjectCoverageFolder = "backboneCoverageReport";
-	private static String subjectCoverageFolder = "emberCoverageReport";
+	private static String subjectCoverageFolder = "picturefillCoverageReport";
 	
 
 	private static String coverageReportPath = "/Users/aminmf/Downloads/JSCover-1.0.23/target/" + subjectCoverageFolder;
@@ -63,6 +63,8 @@ public class ProductionCodeCoverageAnalyzer {
 	private static int missedEventCallback;
 	private static int coveredClosure;
 	private static int missedClosure;
+	private static int coveredDOMAccess;
+	private static int missedDOMAccess;
 	private static int neverExecFunCallSites;
 	private static int totalMissedStatementLinesInMissedFunctionCounter;
 	private static int totalMissedStatementLines;
@@ -173,6 +175,8 @@ public class ProductionCodeCoverageAnalyzer {
 		missedEventCallback += codeAnalyzer.getMissedEventCallback();
 		coveredClosure += codeAnalyzer.getCoveredClosure();
 		missedClosure += codeAnalyzer.getMissedClosure();
+		coveredDOMAccess += codeAnalyzer.getCoveredDOMAccess();
+		missedDOMAccess += codeAnalyzer.getMissedDOMAccess();
 		neverExecFunCallSites +=  codeAnalyzer.getNeverExecFunCallSites();
 		totalMissedStatementLinesInMissedFunctionCounter += codeAnalyzer.getTotalMissedStatementLinesInMissedFunctionCounter();
 		totalMissedStatementLines += codeAnalyzer.getTotalMissedStatementLines();
@@ -189,6 +193,8 @@ public class ProductionCodeCoverageAnalyzer {
 		System.out.println("++++ missedEventCallback: " + missedEventCallback);
 		System.out.println("++++ coveredClosure: " + coveredClosure);
 		System.out.println("++++ missedClosure: " + missedClosure);
+		System.out.println("++++ coveredDOMAccess: " + coveredDOMAccess);
+		System.out.println("++++ missedDOMAccess: " + missedDOMAccess);
 		System.out.println("++++ neverExecFunCallSites: " + neverExecFunCallSites);
 		
 		float ratio = 0;
@@ -199,9 +205,47 @@ public class ProductionCodeCoverageAnalyzer {
 			System.out.println("@ Percentage of missed statement in missed functions = " + ratio*100 + "%");
 		}
 
+		
 		System.out.println("==========================");
-		System.out.println(coveredRegularFunc + "\t" + missedRegularFunc + "\t" + coveredCallback + "\t" + missedCallback + "\t" + coveredAsyncCallback + "\t" +
-		missedAsyncCallback + "\t" + coveredEventCallback + "\t" + missedEventCallback + "\t" + coveredClosure + "\t" + missedClosure + "\t" + neverExecFunCallSites + "\t" + ratio*100 + "%");
+		System.out.print(coveredRegularFunc + "\t" + missedRegularFunc + "\t" + coveredCallback + "\t" + missedCallback + "\t" + 
+				coveredAsyncCallback + "\t" + missedAsyncCallback + "\t" + coveredEventCallback + "\t" + missedEventCallback + "\t" + 
+				coveredClosure + "\t" + missedClosure + "\t" + coveredDOMAccess + "\t" + missedDOMAccess + "\t");
+
+		float regFuncCoverage , callbackCoverage, asyncCallbackCoverage, eventCallbackCoverage, closureCoverage, DOMAccessCoverage;
+		if (coveredRegularFunc+missedRegularFunc!=0){
+			regFuncCoverage = (float)coveredRegularFunc/(float)(coveredRegularFunc+missedRegularFunc);
+			System.out.print(regFuncCoverage*100 + "%\t");
+		}else
+			System.out.print("\t\t");
+		if (coveredCallback+missedCallback!=0){
+			callbackCoverage = (float)coveredCallback/(float)(coveredCallback+missedCallback);
+			System.out.print(callbackCoverage*100 + "%\t");
+		}else
+			System.out.print("\t\t");
+		if (coveredAsyncCallback+missedAsyncCallback!=0){
+			asyncCallbackCoverage = (float)coveredAsyncCallback/(float)(coveredAsyncCallback+missedAsyncCallback);
+			System.out.print(asyncCallbackCoverage*100 + "%\t");
+		}else
+			System.out.print("\t\t");
+		if (coveredEventCallback+missedEventCallback!=0){
+			eventCallbackCoverage = (float)coveredEventCallback/(float)(coveredEventCallback+missedEventCallback);
+			System.out.print(eventCallbackCoverage*100 + "%\t");
+		}else
+			System.out.print("\t\t");
+		if (coveredClosure+missedClosure!=0){
+			closureCoverage = (float)coveredClosure/(float)(coveredClosure+missedClosure);
+			System.out.print(closureCoverage*100 + "%\t");
+		}else
+			System.out.print("\t\t");
+		if (coveredDOMAccess+missedDOMAccess!=0){
+			DOMAccessCoverage = (float)coveredDOMAccess/(float)(coveredDOMAccess+missedDOMAccess);
+			System.out.print(DOMAccessCoverage*100 + "%\t");
+		}else
+			System.out.print("\t\t");
+		
+		System.out.print(neverExecFunCallSites + "\t" + ratio*100 + "%\n");
+	
+		
 		System.out.println("==========================");
 		
 	}

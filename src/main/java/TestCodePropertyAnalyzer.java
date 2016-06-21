@@ -28,7 +28,9 @@ import core.TraceAnalyzer;
 
 public class TestCodePropertyAnalyzer {
 
-	//private static String testsFramework = "qunit";  // {"qunit", "jasmine", "mocha"}
+	private static String testsFramework = "qunit";  // {"qunit", "jasmine", "mocha"}
+	private static String testsFolder = "/Users/aminmf/Documents/JavaScriptTestsStudy/popularJS/pageres/test/";
+	
 	//private static String testsFolder = "/Users/aminmf/Documents/JavaScriptTestsStudy/popularJS/velocity/test/";
 	//private static String testsFolder = "/Users/aminmf/Documents/JavaScriptTestsStudy/popularJS/lazysizes/tests/";   // => QUnit.test.apply
 	//private static String testsFolder = "/Users/aminmf/Documents/JavaScriptTestsStudy/popularJS/ember.js/tests/"; => Wrong answer! also consider node-test folder
@@ -36,8 +38,8 @@ public class TestCodePropertyAnalyzer {
 	//private static String testsFolder = "/Users/aminmf/Documents/JavaScriptTestsStudy/popularJS/moment/src/test/";
 		
 
-	private static String testsFramework = "jasmine";
-	private static String testsFolder = "/Users/aminmf/Documents/JavaScriptTestsStudy/popularJS/dropzone/test";
+	//private static String testsFramework = "jasmine";
+	//private static String testsFolder = "/Users/aminmf/Documents/JavaScriptTestsStudy/popularJS/dropzone/test";
 
 	
 	

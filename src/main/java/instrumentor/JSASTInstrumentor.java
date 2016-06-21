@@ -195,15 +195,26 @@ public class JSASTInstrumentor implements NodeVisitor{
 		return coveredRegularFunc;
 	}
 
+	// DOM Access Coverage
+	private ArrayList<Integer> coveredDOMAccessLines = new ArrayList<Integer>();
+	public ArrayList<Integer> getCoveredDOMAccessLines() {
+		return coveredDOMAccessLines;
+	}
+	private ArrayList<Integer> missedDOMAccessLines = new ArrayList<Integer>();
+	public ArrayList<Integer> getMissedDOMAccessLines() {
+		return missedDOMAccessLines;
+	}
+	
+	
+	
 	private int missedRegularFunc = 0;
-
-	private String testsFramework;
-
 	public int getMissedRegularFunc() {
 		return missedRegularFunc;
 	}
 
+	private String testsFramework;
 
+	
 	public void setVisitOnly(String visitOnly){
 		this.visitOnly = visitOnly;
 	}
@@ -559,6 +570,18 @@ public class JSASTInstrumentor implements NodeVisitor{
 			if (!functionCalls.contains(targetSource))
 				functionCalls.add(targetSource);
 
+		// check for DOM API accessing the DOM
+		if (isDOMAPIMethod(targetSource)){
+			int lineNumber = node.getLineno()+1;
+			if (coveredStatementLines.contains(lineNumber)){
+				if (!coveredDOMAccessLines.contains(lineNumber))	coveredDOMAccessLines.add(lineNumber);
+				System.out.println("======== Covered DOM access at line" + (node.getLineno()+1) + " - DOM access: " + targetSource);
+			}else{
+				if (!missedDOMAccessLines.contains(lineNumber))		missedDOMAccessLines.add(lineNumber);
+				System.out.println("======== Missed DOM access at line" + (node.getLineno()+1) + " - DOM access: " + targetSource);
+			}
+		}		
+		
 		// check for callback and if it's an event-dependent callback
 		for (AstNode n : fcall.getArguments()){
 			if (n.shortName().equals("Name") && coveredFunctions.contains(n.toSource())){
@@ -605,8 +628,18 @@ public class JSASTInstrumentor implements NodeVisitor{
 				missedEventCallback++;
 			}
 			//System.out.println("Event-dependent callback function: " + asmt.toSource());
-		}
 
+		}else // checking for DOM element changes 
+			if (isDOMElementAttribute(varName)){
+				int lineNumber = node.getLineno()+1;
+				if (coveredStatementLines.contains(lineNumber)){
+					if (!coveredDOMAccessLines.contains(lineNumber))	coveredDOMAccessLines.add(lineNumber);
+					System.out.println("======== Covered DOM access at line" + (node.getLineno()+1) + " - DOM elem attribute: " + varName);
+				}else{
+					if (!missedDOMAccessLines.contains(lineNumber))		missedDOMAccessLines.add(lineNumber);
+					System.out.println("======== Missed DOM access at line" + (node.getLineno()+1) + " - DOM elem attribute: " + varName);
+				}
+			}
 	}
 
 	private void instrumentFunctionNode(AstNode node) {
@@ -1160,6 +1193,41 @@ public class JSASTInstrumentor implements NodeVisitor{
 		missedFunctions.clear();
 	}
 
+	public boolean isDOMAPIMethod(String functionName){
+
+		String[] DOMAccessMethods = { 
+				".getElementById", ".getElementsByTagName", ".getElementsByClassName", ".getElementsByName",
+				".createElement", ".removeChild", ".appendChild", ".replaceChild", ".addEventListener", ".appendChild", ".adoptNode", 
+				".blur", ".click",  ".createAttribute", ".createElement", ".createTextNode", ".insertBefore", ".querySelector", ".querySelectorAll", 
+				".removeAttribute", ".removeAttributeNode", ".removeChild", ".replaceChild", ".removeEventListener", ".setAttribute", ".setAttributeNode", ".getAttribute",			 				".dblclick", ".hover", ".mouseout", ".mouseover", ".scroll", ".select", ".submit", ".toggle", ".trigger", ".triggerHandler",
+				".onclick", ".ondblclick", ".onmouseover", ".onmouseout", ".onselect", ".onsubmit", ".ondrag", ".ondragover",
+				".addClass", ".removeClass", ".removeAttr", ".css", ".attr", ".prop", ".append", ".appendTo", ".prepend", ".prependTo", 
+				".insertBefore", ".insertAfter", ".detach", ".remove", ".html"
+		};		
+
+		for (String pattern: DOMAccessMethods)
+			if (functionName.endsWith(pattern))
+				return true;
+
+		if (functionName.equals("jQuery") || functionName.equals("$"))
+			return true;
+
+		return false;
+	}
+
+	public boolean isDOMElementAttribute(String functionName){
+		String[] DOMElemAtt = { ".innerHTML", ".attribute", ".onclick", ".anchors", ".documentElement", ".forms", ".head", ".images", ".links"};		
+		for (String pattern: DOMElemAtt)
+			if (functionName.endsWith(pattern))
+				return true;
+		
+		if (functionName.contains(".style."))
+			return true;
+		
+		return false;
+	}
+
+
 	public boolean isEventMethod(String functionName){
 		/**
 		jQuery Event Methods
@@ -1199,16 +1267,15 @@ public class JSASTInstrumentor implements NodeVisitor{
 		trigger() 	Triggers all events bound to the selected elements
 		triggerHandler() 	Triggers all functions bound to a specified event for the selected elements
 		unload() 	Deprecated in version 1.8. Attaches an event handler to the unload event
-		
-		
-		
-		 Node.js EventEmitter => emit()  : .emit(event, data, ...)
-		
-		 */
+
+
+		Node.js EventEmitter => emit()  : .emit(event, data, ...)
+		 **/
 
 		String[] eventMethods = { ".bind", ".blur", ".change", ".click", ".dblclick", ".delegate", ".error", ".focus", 
 				".focusin", ".focusout", ".hover", ".keydown", ".keypress", ".keyup", ".live", ".load", ".mousedown", ".mouseenter", ".mouseleave", ".mousemove",  
-				".mouseout", ".mouseover", ".mouseup", ".on", ".one", ".ready", ".resize", ".scroll", ".select", ".submit", ".toggle", ".trigger", ".triggerHandler", ".emit", ".unload",
+				".mouseout", ".mouseover", ".mouseup", ".on", ".one", ".ready", ".resize", ".scroll", ".select", ".submit", ".toggle", ".trigger", ".triggerHandler", ".unload",
+				".emit",
 
 				".addEventListener", ".attachEvent",
 
@@ -1265,21 +1332,28 @@ public class JSASTInstrumentor implements NodeVisitor{
 		 */
 	}
 
+
 	public boolean isAsyncMethod(String functionName){
 		/**
+		 	e.g 
 		 	setTimeout(func, delay, [param1, param2, ...])
 			setInterval(func, delay[, param1, param2, ...])
+			...
 		 */
 
-		// TODO: XHR and others from Keheliya's paper
+		// Updated based on http://salt.ece.ubc.ca/callback-study/#async-apis
 
-		String[] asyncMethods = { "setImmediate", "setTimeout", "setInterval"};		
+		String[] asyncMethods = { "setImmediate", "setTimeout", "setInterval", "XMLHTTPRequest.open", "addEventListener", "onclick", "process.nextTick"};		
+		String[] asyncIOPaterns = { "fs.", "net.", "child_process.", "crypto.", "dns.", "domain.", "http.", "https.", "net.", "tls.", "dgram."};		
 
-		for (String am: asyncMethods)
-			if (functionName.equals(am))
+		for (String pattern: asyncMethods)
+			if (functionName.endsWith(pattern))
 				return true;
-		return false;
+		for (String pattern: asyncIOPaterns)
+			if (functionName.startsWith(pattern))
+				return true;
 
+		return false;
 	}
 
 
