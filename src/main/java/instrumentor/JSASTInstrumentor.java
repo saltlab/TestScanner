@@ -1,6 +1,7 @@
 package instrumentor;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 
 import org.apache.commons.lang3.ArrayUtils;
@@ -13,11 +14,23 @@ import org.mozilla.javascript.ast.Block;
 import org.mozilla.javascript.ast.ExpressionStatement;
 import org.mozilla.javascript.ast.FunctionCall;
 import org.mozilla.javascript.ast.FunctionNode;
+import org.mozilla.javascript.ast.ReturnStatement;
 import org.mozilla.javascript.ast.Name;
 import org.mozilla.javascript.ast.InfixExpression;
+import org.mozilla.javascript.ast.IfStatement;
+import org.mozilla.javascript.ast.Scope;
 import org.mozilla.javascript.ast.NewExpression;
 import org.mozilla.javascript.ast.NodeVisitor;
 import org.mozilla.javascript.ast.ObjectProperty;
+import org.mozilla.javascript.ast.PropertyGet;
+import org.mozilla.javascript.ast.ElementGet;
+import org.mozilla.javascript.ast.VariableInitializer;
+import org.mozilla.javascript.ast.SwitchStatement;
+import org.mozilla.javascript.ast.SwitchCase;
+import org.mozilla.javascript.ast.ForLoop;
+import org.mozilla.javascript.ast.DoLoop;
+import org.mozilla.javascript.ast.WhileLoop;
+
 
 
 /**
@@ -42,6 +55,8 @@ public class JSASTInstrumentor implements NodeVisitor{
 	private int assertionCounter = 0;
 	private int newExpressionCounter = 0;
 	private int triggerCounetr = 0;
+
+	private ArrayList<FunctionInfo> FunctionInfoList = new ArrayList<FunctionInfo>();
 
 	private ArrayList<TestCaseInfo> testCaseInfoList = new ArrayList<TestCaseInfo>();
 	public ArrayList<TestCaseInfo> getTestCaseInfoList() {
@@ -196,17 +211,18 @@ public class JSASTInstrumentor implements NodeVisitor{
 	}
 
 	// DOM Access Coverage
-	private ArrayList<Integer> coveredDOMAccessLines = new ArrayList<Integer>();
-	public ArrayList<Integer> getCoveredDOMAccessLines() {
-		return coveredDOMAccessLines;
+	private ArrayList<Integer> coveredDOMRelatedLines = new ArrayList<Integer>();
+	public ArrayList<Integer> getCoveredDOMRelatedLines() {
+		return coveredDOMRelatedLines;
 	}
-	private ArrayList<Integer> missedDOMAccessLines = new ArrayList<Integer>();
-	public ArrayList<Integer> getMissedDOMAccessLines() {
-		return missedDOMAccessLines;
+	private ArrayList<Integer> missedDOMRelatedLines = new ArrayList<Integer>();
+	public ArrayList<Integer> getMissedDOMRelatedLines() {
+		return missedDOMRelatedLines;
 	}
-	
-	
-	
+
+	ArrayList<String> DOMReturningFunction = new ArrayList<String>();  // storing functions that return a DOM element/attribute. 
+	ArrayList<DOMVariableInfo> DOMVariableInfoList = new ArrayList<DOMVariableInfo>();
+
 	private int missedRegularFunc = 0;
 	public int getMissedRegularFunc() {
 		return missedRegularFunc;
@@ -214,7 +230,7 @@ public class JSASTInstrumentor implements NodeVisitor{
 
 	private String testsFramework;
 
-	
+
 	public void setVisitOnly(String visitOnly){
 		this.visitOnly = visitOnly;
 	}
@@ -345,14 +361,19 @@ public class JSASTInstrumentor implements NodeVisitor{
 			else if (node instanceof FunctionNode)
 				instrumentFunctionNode(node);
 		}else if (visitType.equals("AnalyzeProductionCode")){
+
 			if (visitOnly.equals("FunctionNode")){
 				if (node instanceof FunctionNode)
 					analyzeProductionCodeFunctionNode(node);
-			}else{
+			}else if (visitOnly.equals("FunctionCall")){
 				if (node instanceof FunctionCall)
 					analyzeProductionCodeFunctionCallNode(node);
-				else if (node instanceof Assignment)
+				else if (node instanceof Assignment){
 					analyzeProductionCodeAssignmentNode(node);
+				}
+			}else if (visitOnly.equals("Variables")){
+				if (node instanceof Name || node instanceof PropertyGet || node instanceof ElementGet)
+					analyzeDOMRelatedSlice(node);
 			}
 		}else if (visitType.equals("AnalyzeTestCode")){
 			if (visitOnly.equals("FunctionNode")){
@@ -378,10 +399,18 @@ public class JSASTInstrumentor implements NodeVisitor{
 		FunctionNode f = (FunctionNode) node;
 		int numOfParam = f.getParams().size();
 		int lineNumber = node.getLineno()+1;
-		int fLength = f.getEndLineno() - f.getLineno();		
-		int fDepth = node.depth();
+		int fLength = f.getEndLineno() - f.getLineno();	
+		//int fDepth = node.depth();
 		String funcLocation = "regular";
 		String functionName = getFunctionName(f);
+
+		// adding to the list of functions
+		FunctionInfo fi = new FunctionInfo(functionName, f.getLineno(), f.getEndLineno());
+		for (int i=0; i<f.getParams().size(); i++){
+			fi.addParam(f.getParams().get(i).toSource());
+		}
+		FunctionInfoList.add(fi);
+
 		//System.out.println("Function name: " + functionName);
 		AstNode parentNode = node.getParent();
 		String parentNodeSource = parentNode.toSource();
@@ -428,7 +457,6 @@ public class JSASTInstrumentor implements NodeVisitor{
 		}
 		functionCounter++;
 
-
 		if (parentNodeName.equals("ParenthesizedExpression")){
 			System.out.println("This is an immediately invoked function, just ignore it!");
 			//This is an immediately invoked function, just ignore it!
@@ -437,7 +465,6 @@ public class JSASTInstrumentor implements NodeVisitor{
 			AstNode targetNode = parentNodeFunctionCall.getTarget();
 			String targetSource = targetNode.toSource();
 			//System.out.println("targetSource: ++++++++" + targetSource);
-
 
 			// check for callback
 			boolean callbackFound = false;
@@ -474,15 +501,12 @@ public class JSASTInstrumentor implements NodeVisitor{
 				}
 			}
 		}else if (parentNodeName.equals("Block")){
-
 			//System.out.println("enclosingFunction: " + enclosingFunction);
-
 			AstNode parentParentNode = parentNode.getParent();
 			String parentParentNodeSource = parentParentNode.toSource();
 			String parentParentNodeName = parentParentNode.shortName();
 			//System.out.println("shortName: " + shortName);
 			//System.out.println("parentParentNodeName: " + parentParentNodeName);
-
 
 			// this is a closure (nested function)
 			if (covered){
@@ -517,7 +541,6 @@ public class JSASTInstrumentor implements NodeVisitor{
 			testUtilityFunctionInfoList.add(tufi);
 			System.out.println("Test utility function name: " + functionName);
 		}
-
 		AstNode parentNode = node.getParent();
 		//String parentNodeSource = parentNode.toSource();
 		//String parentNodeName = parentNode.shortName();
@@ -529,31 +552,15 @@ public class JSASTInstrumentor implements NodeVisitor{
 			enclosingFunction  = getFunctionName(node.getEnclosingFunction());
 		}
 		//System.out.println("enclosingFunction: " + enclosingFunction);
-
 	}
 
 	private void analyzeProductionCodeFunctionCallNode(AstNode node) {
-
 		/**
 		 * A function call can be
 		 * 1) Regular: can be inside a function or global scope
 		 * 2) Callback function call: inside a function and the name of function is an argument of the enclosing function
-		 * 
-		 * some jquery callback receiving functions include each, on, etc.
-		 * 
 		 * Callbacks can be event-dependent, i.e., the enclosing function is an event function such as on() or click()
-		 * 
-		 * $.ajax({
-        		url:"http://fiddle.jshell.net/favicon.png",
-        		success:successCallback,
-        		complete:completeCallback,
-        		error:errorCallback
-    	   });
-		 * 
-		 * Callback function: sent as an argument of another function. Anonymous functions defined in the parameter of the containing function, is one of the common patterns for using callback functions. 
-		 * 
 		 */
-
 		FunctionCall fcall = (FunctionCall) node;
 		AstNode targetNode = fcall.getTarget(); // node evaluating to the function to call. E.g document.getElemenyById(x)
 		String targetSource = targetNode.toSource();
@@ -570,18 +577,147 @@ public class JSASTInstrumentor implements NodeVisitor{
 			if (!functionCalls.contains(targetSource))
 				functionCalls.add(targetSource);
 
-		// check for DOM API accessing the DOM
+
+
+
+		// check for DOM API accessing the DOM and related statements
+		HashSet<Integer> DOMRelatedLines = new HashSet<Integer>();
 		if (isDOMAPIMethod(targetSource)){
 			int lineNumber = node.getLineno()+1;
-			if (coveredStatementLines.contains(lineNumber)){
-				if (!coveredDOMAccessLines.contains(lineNumber))	coveredDOMAccessLines.add(lineNumber);
-				System.out.println("======== Covered DOM access at line" + (node.getLineno()+1) + " - DOM access: " + targetSource);
-			}else{
-				if (!missedDOMAccessLines.contains(lineNumber))		missedDOMAccessLines.add(lineNumber);
-				System.out.println("======== Missed DOM access at line" + (node.getLineno()+1) + " - DOM access: " + targetSource);
+			System.out.println("***** DOM access at line" + (node.getLineno()+1) + " - DOM access: " + targetSource);
+
+			AstNode child = fcall;
+			AstNode parent = fcall.getParent();
+			while (!(parent instanceof FunctionNode)){
+				//System.out.println("fcall parent: " + parent.toSource());
+				//System.out.println("fcall parent.shortName(): " + parent.shortName());
+
+				if (parent instanceof IfStatement){
+					// check if child is a Scope then the statement belongs to the body of the condition
+					if (child instanceof Scope){ 
+						//System.out.println("DOM access in a condition body");
+						DOMRelatedLines.add(lineNumber);
+					}else{
+						//System.out.println("DOM access in a condition"); // then all the body will be affected
+						int count = parent.toSource().length() - parent.toSource().replace("\n", "").replace("\r", "").length();
+						//System.out.println("Condition body from line " + (parent.getLineno()+1) + " to line " + (parent.getLineno() + count - 2));
+						for (int i=parent.getLineno()+1; i<=parent.getLineno() + count - 2;i++)
+							DOMRelatedLines.add(i);
+					}
+					break;
+				}else if (parent instanceof SwitchStatement){
+					// check if child is a Scope then the statement belongs to the body of the condition
+					if (child instanceof Scope || child instanceof SwitchCase){ 
+						//System.out.println("DOM access in a SwitchStatement body");
+						DOMRelatedLines.add(lineNumber);
+					}else{
+						//System.out.println("DOM access in a SwitchStatement condition"); // then all the body will be affected
+						int count = parent.toSource().length() - parent.toSource().replace("\n", "").replace("\r", "").length();
+						//System.out.println("Condition body from line " + (parent.getLineno()+1) + " to line " + (parent.getLineno() + count - 2));
+						for (int i=parent.getLineno()+1; i<=parent.getLineno() + count - 2;i++)
+							DOMRelatedLines.add(i);
+					}
+					break;
+				}else if (parent instanceof ForLoop || parent instanceof DoLoop || parent instanceof WhileLoop){
+					// check if child is a Scope then the statement belongs to the body of the condition
+					if (child instanceof Scope){ 
+						//System.out.println("DOM access in a Loop body");
+						DOMRelatedLines.add(lineNumber);
+					}else{
+						//System.out.println("DOM access in a Loop condition"); // then all the body will be affected
+						int count = parent.toSource().length() - parent.toSource().replace("\n", "").replace("\r", "").length();
+						//System.out.println("Condition body from line " + (parent.getLineno()+1) + " to line " + (parent.getLineno() + count - 2));
+						for (int i=parent.getLineno()+1; i<=parent.getLineno() + count - 2;i++)
+							DOMRelatedLines.add(i);
+					}
+					break;
+				}else if (parent instanceof ReturnStatement){
+					DOMRelatedLines.add(lineNumber);
+					try{
+						enclosingFunction = "";
+						if (node.getEnclosingFunction()!=null)
+							enclosingFunction  = getFunctionName(node.getEnclosingFunction());
+						//System.out.println("enclosingFunction: " + enclosingFunction);
+						// add the enclosing function to the DOM APIs
+						if (!DOMReturningFunction.contains(enclosingFunction))
+							DOMReturningFunction.add(enclosingFunction);
+					}catch(Exception e){}
+					break;
+				}else if (parent instanceof Assignment){
+					DOMRelatedLines.add(lineNumber);
+					Assignment asmt = (Assignment) parent;
+					String varName = asmt.getLeft().toSource();
+					//System.out.println(varName + " is set to: " + asmt.getRight().toSource());
+					//System.out.println(varName + " is a: " + asmt.getLeft().shortName());
+					// find the enclosing function node
+					while (!(parent instanceof FunctionNode)){
+						parent = parent.getParent();
+					}
+					FunctionNode fNode = (FunctionNode) parent;
+					// add a new DOM variable
+					DOMVariableInfo DV = new DOMVariableInfo(varName, lineNumber, fNode);
+					DOMVariableInfoList.add(DV);
+					break;
+				}else if (parent instanceof VariableInitializer){
+					DOMRelatedLines.add(lineNumber);
+					VariableInitializer vi = (VariableInitializer) parent;
+					String varName = vi.getTarget().toSource();
+					//System.out.println(varName + " is set to: " + vi.getInitializer().toSource());
+					//System.out.println(varName + " is a: " + vi.getTarget().shortName());
+					// find the enclosing function node
+					while (!(parent instanceof FunctionNode)){
+						parent = parent.getParent();
+					}
+					FunctionNode fNode = (FunctionNode) parent;
+					// add a new DOM variable
+					DOMVariableInfo DV = new DOMVariableInfo(varName, lineNumber, fNode);
+					DOMVariableInfoList.add(DV);
+					break;
+				}else if (parent instanceof FunctionCall){
+					// DOM API call as an argument
+					DOMRelatedLines.add(lineNumber);
+					FunctionCall pCall = (FunctionCall) parent;
+					AstNode pCallTargetNode = pCall.getTarget(); // node evaluating to the function to call. E.g document.getElemenyById(x)
+					String functionName = pCallTargetNode.toSource();
+					// finding which argument is the function call
+					int i=0;
+					for (; i<pCall.getArguments().size(); i++)
+						if (pCall.getArguments().get(i) instanceof FunctionCall)
+							break;
+					System.out.println("Argument " + (i+1) + " of the function " + functionName + " is DOM related");
+					// search in the list of functions
+					for (FunctionInfo fi : FunctionInfoList){
+						if (fi.getName().equals(functionName)){
+							fi.getParams().get(i);
+							System.out.println("Parameter " + fi.getParams().get(i) + " of function " + functionName + " is DOM related.");
+							// add a new DOM variable to compute forward slice in the next AST visit for variables, etc.
+							DOMVariableInfo DV = new DOMVariableInfo(fi.getParams().get(i), fi.getBeginLineNum(), fi.getEndLineNum());
+							DOMVariableInfoList.add(DV);
+							break;
+						}
+					}
+					break;
+				}
+
+				child = parent;
+				parent = parent.getParent();
+			}
+
+			for (int DRL: DOMRelatedLines){
+				if (coveredStatementLines.contains(DRL)){
+					if (!coveredDOMRelatedLines.contains(DRL)){
+						coveredDOMRelatedLines.add(DRL);
+						System.out.println("======== Covered DOM related statement at line" + DRL);
+					}
+				}else if (missedStatementLines.contains(DRL)){
+					if (!missedDOMRelatedLines.contains(DRL)){
+						missedDOMRelatedLines.add(DRL);
+						System.out.println("======== Missed DOM related statement at line" + DRL);
+					}
+				}
 			}
 		}		
-		
+
 		// check for callback and if it's an event-dependent callback
 		for (AstNode n : fcall.getArguments()){
 			if (n.shortName().equals("Name") && coveredFunctions.contains(n.toSource())){
@@ -611,7 +747,14 @@ public class JSASTInstrumentor implements NodeVisitor{
 
 	}
 
+
+
+
 	private void analyzeProductionCodeAssignmentNode(AstNode node) {
+
+		//////////////////////////////////////// TOOOOOOOOOODDDDDDDDDDDDDDDDDDDDDDD ??????????????????????????????
+
+
 		Assignment asmt = (Assignment) node;
 		String varName = asmt.getLeft().toSource();
 		//System.out.println(varName + " is set to: " + asmt.getRight().toSource());
@@ -633,14 +776,109 @@ public class JSASTInstrumentor implements NodeVisitor{
 			if (isDOMElementAttribute(varName)){
 				int lineNumber = node.getLineno()+1;
 				if (coveredStatementLines.contains(lineNumber)){
-					if (!coveredDOMAccessLines.contains(lineNumber))	coveredDOMAccessLines.add(lineNumber);
+					if (!coveredDOMRelatedLines.contains(lineNumber))	coveredDOMRelatedLines.add(lineNumber);
 					System.out.println("======== Covered DOM access at line" + (node.getLineno()+1) + " - DOM elem attribute: " + varName);
-				}else{
-					if (!missedDOMAccessLines.contains(lineNumber))		missedDOMAccessLines.add(lineNumber);
+				}else if (missedStatementLines.contains(lineNumber)){
+					if (!missedDOMRelatedLines.contains(lineNumber))		missedDOMRelatedLines.add(lineNumber);
 					System.out.println("======== Missed DOM access at line" + (node.getLineno()+1) + " - DOM elem attribute: " + varName);
 				}
 			}
 	}
+
+
+
+
+	private void analyzeDOMRelatedSlice(AstNode node) {
+
+		String varName = "";
+
+		if (node instanceof Name){
+			Name name = (Name) node;
+			varName = name.toSource();
+		}else if (node instanceof PropertyGet){
+			PropertyGet name = (PropertyGet) node;
+			varName = name.toSource();
+		}else if (node instanceof ElementGet){
+			ElementGet name = (ElementGet) node;
+			varName = name.toSource();
+		}
+
+		int lineNumber = node.getLineno()+1;
+		HashSet<Integer> DOMRelatedLines = new HashSet<Integer>();
+		for (DOMVariableInfo DV: DOMVariableInfoList){
+			if (DV.isUsedInForwardSlice(varName, node.getLineno()+1)){
+				//System.out.println(varName + " is a DOMVariable used at line: " + (node.getLineno()+1));
+				AstNode child = node;
+				AstNode parent = node.getParent();
+				while (!(parent instanceof FunctionNode)){
+					//System.out.println("node parent: " + parent.toSource());
+					//System.out.println("node parent.shortName(): " + parent.shortName());
+
+					if (parent instanceof IfStatement){
+						// check if child is a Scope then the statement belongs to the body of the condition
+						if (child instanceof Scope){ 
+							//System.out.println("DOM access in a condition body");
+							DOMRelatedLines.add(lineNumber);
+						}
+						else{
+							//System.out.println("DOM access in a condition"); // then all the body will be affected
+							int count = parent.toSource().length() - parent.toSource().replace("\n", "").replace("\r", "").length();
+							//System.out.println("Condition body from line " + (parent.getLineno()+1) + " to line " + (parent.getLineno() + count - 2));
+							for (int i=parent.getLineno()+1; i<=parent.getLineno() + count - 2;i++)
+								DOMRelatedLines.add(i);
+						}
+						break;
+					}else if (parent instanceof SwitchStatement){
+						// check if child is a Scope then the statement belongs to the body of the condition
+						if (child instanceof Scope || child instanceof SwitchCase){ 
+							//System.out.println("DOM access in a SwitchStatement body");
+							DOMRelatedLines.add(lineNumber);
+						}
+						else{
+							//System.out.println("DOM access in a SwitchStatement condition"); // then all the body will be affected
+							int count = parent.toSource().length() - parent.toSource().replace("\n", "").replace("\r", "").length();
+							//System.out.println("Condition body from line " + (parent.getLineno()+1) + " to line " + (parent.getLineno() + count - 2));
+							for (int i=parent.getLineno()+1; i<=parent.getLineno() + count - 2;i++)
+								DOMRelatedLines.add(i);
+						}
+						break;
+					}else if (parent instanceof ForLoop || parent instanceof DoLoop || parent instanceof WhileLoop){
+						// check if child is a Scope then the statement belongs to the body of the condition
+						if (child instanceof Scope){ 
+							//System.out.println("DOM access in a Loop body");
+							DOMRelatedLines.add(lineNumber);
+						}
+						else{
+							//System.out.println("DOM access in a Loop condition"); // then all the body will be affected
+							int count = parent.toSource().length() - parent.toSource().replace("\n", "").replace("\r", "").length();
+							//System.out.println("Condition body from line " + (parent.getLineno()+1) + " to line " + (parent.getLineno() + count - 2));
+							for (int i=parent.getLineno()+1; i<=parent.getLineno() + count - 2;i++)
+								DOMRelatedLines.add(i);
+						}
+						break;
+					}
+					child = parent;
+					parent = parent.getParent();
+				}
+
+				for (int DRL: DOMRelatedLines){
+					if (coveredStatementLines.contains(DRL)){
+						if (!coveredDOMRelatedLines.contains(DRL)){
+							coveredDOMRelatedLines.add(DRL);
+							System.out.println("======== Covered DOM related statement at line" + DRL);
+						}
+					}else if (missedStatementLines.contains(DRL)){
+						if (!missedDOMRelatedLines.contains(DRL)){
+							missedDOMRelatedLines.add(DRL);
+							System.out.println("======== Missed DOM related statement at line" + DRL);
+						}
+					}
+				}
+
+			}
+		}
+	}
+
 
 	private void instrumentFunctionNode(AstNode node) {
 		FunctionNode f = (FunctionNode) node;
@@ -1212,6 +1450,11 @@ public class JSASTInstrumentor implements NodeVisitor{
 		if (functionName.equals("jQuery") || functionName.equals("$"))
 			return true;
 
+		if (DOMReturningFunction.contains(functionName)){
+			System.out.println(functionName + " is a DOM returning function!");
+			return true;
+		}
+
 		return false;
 	}
 
@@ -1220,10 +1463,10 @@ public class JSASTInstrumentor implements NodeVisitor{
 		for (String pattern: DOMElemAtt)
 			if (functionName.endsWith(pattern))
 				return true;
-		
+
 		if (functionName.contains(".style."))
 			return true;
-		
+
 		return false;
 	}
 
