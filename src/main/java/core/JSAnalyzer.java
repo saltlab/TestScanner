@@ -85,14 +85,14 @@ public class JSAnalyzer {
 		return missedRegularFunc;
 	}
 
-	private int coveredDOMAccess = 0;
-	public int getCoveredDOMAccess() {
-		return coveredDOMAccess;
+	private int coveredDOMRelated = 0;
+	public int getCoveredDOMRelated() {
+		return coveredDOMRelated;
 	}
 
-	private int missedDOMAccess = 0;
-	public int getMissedDOMAccess() {
-		return missedDOMAccess;
+	private int missedDOMRelated = 0;
+	public int getMissedDOMRelated() {
+		return missedDOMRelated;
 	}
 
 	private int neverExecFunCallSites = 0;
@@ -353,6 +353,7 @@ public class JSAnalyzer {
 			astVisitor.setScopeName(scopeName);
 			astVisitor.setCoverageInfo(coveredLines, missedLines, coveredFunctionsIndices, missedFunctionsIndices);
 			/* recurse through AST */
+			
 			astVisitor.setVisitOnly("FunctionNode");
 			ast.visit(astVisitor);
 
@@ -367,6 +368,10 @@ public class JSAnalyzer {
 			astVisitor.setVisitOnly("FunctionCall");
 			ast.visit(astVisitor);
 
+			astVisitor.setVisitOnly("Variables");  // for calculating DOM related slices
+			ast.visit(astVisitor);
+
+			
 			System.out.println("FunctionCalls :" + astVisitor.getFunctionCalls());
 
 			for (String functionCall : astVisitor.getFunctionCalls()){
@@ -388,8 +393,8 @@ public class JSAnalyzer {
 			missedEventCallback = astVisitor.getMissedEventCallback();
 			coveredClosure = astVisitor.getCoveredClosure();
 			missedClosure = astVisitor.getMissedClosure();
-			coveredDOMAccess = astVisitor.getCoveredDOMAccessLines().size();
-			missedDOMAccess = astVisitor.getMissedDOMAccessLines().size();
+			coveredDOMRelated = astVisitor.getCoveredDOMRelatedLines().size();
+			missedDOMRelated = astVisitor.getMissedDOMRelatedLines().size();
 
 			System.out.println("++++ coveredRegularFunc: " + coveredRegularFunc);
 			System.out.println("++++ missedRegularFunc: " + missedRegularFunc);
@@ -401,9 +406,8 @@ public class JSAnalyzer {
 			System.out.println("++++ missedEventCallback: " + missedEventCallback);
 			System.out.println("++++ coveredClosure: " + coveredClosure);
 			System.out.println("++++ missedClosure: " + missedClosure);
-
-			System.out.println("++++ coveredDOMAccess: " + coveredDOMAccess);
-			System.out.println("++++ missedDOMAccess: " + missedDOMAccess);
+			System.out.println("++++ coveredDOMRelated: " + coveredDOMRelated);
+			System.out.println("++++ missedDOMRelated: " + missedDOMRelated);
 
 			System.out.println("++++ neverExecFunCallSites: " + neverExecFunCallSites);
 						
@@ -423,14 +427,6 @@ public class JSAnalyzer {
 				System.out.println("@ Percentage of missed statement in missed functions = " + ratio*100 + "%");
 			}
 
-
-			/*
-			System.out.println("assertionCounter: " + astVisitor.getAssertionCounter());
-			System.out.println("newExpressionCounter: " + astVisitor.getNewExpressionCounter());
-			System.out.println("testCounter: " + astVisitor.getTestCounter());
-			System.out.println("asynchTestCounter: " + astVisitor.getAsynchTestCounter());
-			System.out.println("trieggerCounter: " + astVisitor.getTriggerCounetr());
-			 */
 
 			/* clean up */
 			Context.exit();
