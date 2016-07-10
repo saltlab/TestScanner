@@ -318,7 +318,7 @@ public class JSAnalyzer {
 	}
 
 
-	public void analyzeProductionCodeCoverage(ArrayList<Integer> coveredLines, ArrayList<Integer> missedLines, ArrayList<Integer> coveredFunctionsIndices, ArrayList<Integer> missedFunctionsIndices) throws Exception {
+	public void analyzeProductionCodeCoverage(ArrayList<Integer> coveredLines, ArrayList<Integer> missedLines, ArrayList<Integer> coveredFunctionsIndices, ArrayList<Integer> missedFunctionLines) throws Exception {
 
 		astVisitor.setVisitType("AnalyzeProductionCode");
 		astVisitor.setFunctionCounter(0); // resetting the index of visited Function nodes for annotating covered functions
@@ -351,7 +351,7 @@ public class JSAnalyzer {
 			//System.out.println(ast.toSource());
 
 			astVisitor.setScopeName(scopeName);
-			astVisitor.setCoverageInfo(coveredLines, missedLines, coveredFunctionsIndices, missedFunctionsIndices);
+			astVisitor.setCoverageInfo(coveredLines, missedLines, coveredFunctionsIndices, missedFunctionLines);
 			/* recurse through AST */
 			
 			astVisitor.setVisitOnly("FunctionNode");

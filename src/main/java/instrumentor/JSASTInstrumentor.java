@@ -82,7 +82,6 @@ public class JSASTInstrumentor implements NodeVisitor{
 		return missedStatementInMissedFunction;
 	}
 	private ArrayList<Integer> coveredFunctionsIndices = new ArrayList<Integer>();
-	private ArrayList<Integer> missedFunctionsIndices = new ArrayList<Integer>();
 	private ArrayList<String> coveredFunctions = new ArrayList<String>();
 	public ArrayList<String> getCoveredFunctions() {
 		return coveredFunctions;
@@ -425,35 +424,66 @@ public class JSASTInstrumentor implements NodeVisitor{
 		//System.out.println("enclosingFunction: " + enclosingFunction);
 
 		boolean covered = false;
-		if (coveredFunctionsIndices.contains(functionCounter)){
-			if (!coveredFunctions.contains(functionName))
-				coveredFunctions.add(functionName);
-			if (!coveredFunctionLines.contains(lineNumber))
-				coveredFunctionLines.add(lineNumber);
-			coveredFunctionsLoc.add(funcLocation);
-			System.out.println("======== Covered function at line" + (node.getLineno()+1) + " - Function name: " + functionName);
-			covered = true;
-		}else{
-			if (!missedFunctions.contains(functionName))
-				missedFunctions.add(functionName);
-			if (!missedFunctionLines.contains(lineNumber))
-				missedFunctionLines.add(lineNumber);
-			System.out.println("======== Missed function at line" + (node.getLineno()+1) + " - Function name: " + functionName);
-			//System.out.println("Missed function from line " + (f.getLineno()+1) + " to " + (f.getEndLineno()+1));
 
-			// fill missedStatementInMissedFunction array with corresponding function index value
-			int missedStatementLinescounter = 0;
-			for (int i=0; i<missedStatementLines.size(); i++){
-				if (missedStatementLines.get(i) >= (f.getLineno()+1) && missedStatementLines.get(i) <= (f.getEndLineno()+1)){
-					missedStatementInMissedFunction.set(i, functionCounter);
-					//System.out.println("Missed statement line " + missedStatementLines.get(i) + " belongs to missed function " + functionCounter);
-					missedStatementLinescounter++;
+		if (coveredFunctionsIndices==null){  
+			// this is the case for lcov report that we don't have coveredFunctionsIndices and instead have missedFunctionsLines
+			// check if lineNumber of function equals a missedFunctionsLines
+			if (missedFunctionLines.contains(lineNumber)){
+				if (!missedFunctions.contains(functionName))
+					missedFunctions.add(functionName);
+				System.out.println("======== Missed function at line" + lineNumber + " - Function name: " + functionName);
+				//System.out.println("Missed function from line " + lineNumber + " to " + (f.getEndLineno()+1));
+				// fill missedStatementInMissedFunction array with corresponding function index value
+				int missedStatementLinescounter = 0;
+				for (int i=0; i<missedStatementLines.size(); i++){
+					if (missedStatementLines.get(i) >= (f.getLineno()+1) && missedStatementLines.get(i) <= (f.getEndLineno()+1)){
+						missedStatementInMissedFunction.set(i, functionCounter);
+						//System.out.println("Missed statement line " + missedStatementLines.get(i) + " belongs to missed function " + functionCounter);
+						missedStatementLinescounter++;
+					}
 				}
+			}else{
+				covered = true;
+				if (!coveredFunctions.contains(functionName))
+					coveredFunctions.add(functionName);
+				if (!coveredFunctionLines.contains(lineNumber))
+					coveredFunctionLines.add(lineNumber);
+				coveredFunctionsLoc.add(funcLocation);
+				System.out.println("======== Covered function at line" + lineNumber + " - Function name: " + functionName);
 			}
-			//System.out.println("missedStatementLinescounter = " + missedStatementLinescounter);
-			//System.out.println("missedStatementLines.size() = " + missedStatementLines.size());
-			//System.out.println("Ratio of total missed statement lines = " + missedStatementLinescounter/missedStatementLines.size());
 
+		}else{
+			// this is the case for json report format
+			if (coveredFunctionsIndices.contains(functionCounter)){
+				if (!coveredFunctions.contains(functionName))
+					coveredFunctions.add(functionName);
+				if (!coveredFunctionLines.contains(lineNumber))
+					coveredFunctionLines.add(lineNumber);
+				coveredFunctionsLoc.add(funcLocation);
+				System.out.println("======== Covered function at line" + lineNumber + " - Function name: " + functionName);
+				covered = true;
+			}else{
+				if (!missedFunctions.contains(functionName))
+					missedFunctions.add(functionName);
+				if (!missedFunctionLines.contains(lineNumber))
+					missedFunctionLines.add(lineNumber);
+				System.out.println("======== Missed function at line" + lineNumber + " - Function name: " + functionName);
+				//System.out.println("Missed function from line " + (f.getLineno()+1) + " to " + (f.getEndLineno()+1));
+
+				// fill missedStatementInMissedFunction array with corresponding function index value
+				int missedStatementLinescounter = 0;
+				for (int i=0; i<missedStatementLines.size(); i++){
+					if (missedStatementLines.get(i) >= (f.getLineno()+1) && missedStatementLines.get(i) <= (f.getEndLineno()+1)){
+						missedStatementInMissedFunction.set(i, functionCounter);
+						//System.out.println("Missed statement line " + missedStatementLines.get(i) + " belongs to missed function " + functionCounter);
+						missedStatementLinescounter++;
+					}
+				}
+				//System.out.println("missedStatementLinescounter = " + missedStatementLinescounter);
+				//System.out.println("missedStatementLines.size() = " + missedStatementLines.size());
+				//System.out.println("Ratio of total missed statement lines = " + missedStatementLinescounter/missedStatementLines.size());
+
+			}
 		}
 		functionCounter++;
 
@@ -584,124 +614,127 @@ public class JSASTInstrumentor implements NodeVisitor{
 		HashSet<Integer> DOMRelatedLines = new HashSet<Integer>();
 		if (isDOMAPIMethod(targetSource)){
 			int lineNumber = node.getLineno()+1;
-			System.out.println("***** DOM access at line" + (node.getLineno()+1) + " - DOM access: " + targetSource);
+			System.out.println("***** DOM access at line" + lineNumber + " - DOM access: " + targetSource);
+			DOMRelatedLines.add(lineNumber);
 
 			AstNode child = fcall;
 			AstNode parent = fcall.getParent();
-			while (!(parent instanceof FunctionNode)){
-				//System.out.println("fcall parent: " + parent.toSource());
-				//System.out.println("fcall parent.shortName(): " + parent.shortName());
+			try{
+				while (!(parent instanceof FunctionNode)){
+					//System.out.println("fcall parent: " + parent.toSource());
+					//System.out.println("fcall parent.shortName(): " + parent.shortName());
 
-				if (parent instanceof IfStatement){
-					// check if child is a Scope then the statement belongs to the body of the condition
-					if (child instanceof Scope){ 
-						//System.out.println("DOM access in a condition body");
-						DOMRelatedLines.add(lineNumber);
-					}else{
-						//System.out.println("DOM access in a condition"); // then all the body will be affected
-						int count = parent.toSource().length() - parent.toSource().replace("\n", "").replace("\r", "").length();
-						//System.out.println("Condition body from line " + (parent.getLineno()+1) + " to line " + (parent.getLineno() + count - 2));
-						for (int i=parent.getLineno()+1; i<=parent.getLineno() + count - 2;i++)
-							DOMRelatedLines.add(i);
-					}
-					break;
-				}else if (parent instanceof SwitchStatement){
-					// check if child is a Scope then the statement belongs to the body of the condition
-					if (child instanceof Scope || child instanceof SwitchCase){ 
-						//System.out.println("DOM access in a SwitchStatement body");
-						DOMRelatedLines.add(lineNumber);
-					}else{
-						//System.out.println("DOM access in a SwitchStatement condition"); // then all the body will be affected
-						int count = parent.toSource().length() - parent.toSource().replace("\n", "").replace("\r", "").length();
-						//System.out.println("Condition body from line " + (parent.getLineno()+1) + " to line " + (parent.getLineno() + count - 2));
-						for (int i=parent.getLineno()+1; i<=parent.getLineno() + count - 2;i++)
-							DOMRelatedLines.add(i);
-					}
-					break;
-				}else if (parent instanceof ForLoop || parent instanceof DoLoop || parent instanceof WhileLoop){
-					// check if child is a Scope then the statement belongs to the body of the condition
-					if (child instanceof Scope){ 
-						//System.out.println("DOM access in a Loop body");
-						DOMRelatedLines.add(lineNumber);
-					}else{
-						//System.out.println("DOM access in a Loop condition"); // then all the body will be affected
-						int count = parent.toSource().length() - parent.toSource().replace("\n", "").replace("\r", "").length();
-						//System.out.println("Condition body from line " + (parent.getLineno()+1) + " to line " + (parent.getLineno() + count - 2));
-						for (int i=parent.getLineno()+1; i<=parent.getLineno() + count - 2;i++)
-							DOMRelatedLines.add(i);
-					}
-					break;
-				}else if (parent instanceof ReturnStatement){
-					DOMRelatedLines.add(lineNumber);
-					try{
-						enclosingFunction = "";
-						if (node.getEnclosingFunction()!=null)
-							enclosingFunction  = getFunctionName(node.getEnclosingFunction());
-						//System.out.println("enclosingFunction: " + enclosingFunction);
-						// add the enclosing function to the DOM APIs
-						if (!DOMReturningFunction.contains(enclosingFunction))
-							DOMReturningFunction.add(enclosingFunction);
-					}catch(Exception e){}
-					break;
-				}else if (parent instanceof Assignment){
-					DOMRelatedLines.add(lineNumber);
-					Assignment asmt = (Assignment) parent;
-					String varName = asmt.getLeft().toSource();
-					//System.out.println(varName + " is set to: " + asmt.getRight().toSource());
-					//System.out.println(varName + " is a: " + asmt.getLeft().shortName());
-					// find the enclosing function node
-					while (!(parent instanceof FunctionNode)){
-						parent = parent.getParent();
-					}
-					FunctionNode fNode = (FunctionNode) parent;
-					// add a new DOM variable
-					DOMVariableInfo DV = new DOMVariableInfo(varName, lineNumber, fNode);
-					DOMVariableInfoList.add(DV);
-					break;
-				}else if (parent instanceof VariableInitializer){
-					DOMRelatedLines.add(lineNumber);
-					VariableInitializer vi = (VariableInitializer) parent;
-					String varName = vi.getTarget().toSource();
-					//System.out.println(varName + " is set to: " + vi.getInitializer().toSource());
-					//System.out.println(varName + " is a: " + vi.getTarget().shortName());
-					// find the enclosing function node
-					while (!(parent instanceof FunctionNode)){
-						parent = parent.getParent();
-					}
-					FunctionNode fNode = (FunctionNode) parent;
-					// add a new DOM variable
-					DOMVariableInfo DV = new DOMVariableInfo(varName, lineNumber, fNode);
-					DOMVariableInfoList.add(DV);
-					break;
-				}else if (parent instanceof FunctionCall){
-					// DOM API call as an argument
-					DOMRelatedLines.add(lineNumber);
-					FunctionCall pCall = (FunctionCall) parent;
-					AstNode pCallTargetNode = pCall.getTarget(); // node evaluating to the function to call. E.g document.getElemenyById(x)
-					String functionName = pCallTargetNode.toSource();
-					// finding which argument is the function call
-					int i=0;
-					for (; i<pCall.getArguments().size(); i++)
-						if (pCall.getArguments().get(i) instanceof FunctionCall)
-							break;
-					System.out.println("Argument " + (i+1) + " of the function " + functionName + " is DOM related");
-					// search in the list of functions
-					for (FunctionInfo fi : FunctionInfoList){
-						if (fi.getName().equals(functionName)){
-							fi.getParams().get(i);
-							System.out.println("Parameter " + fi.getParams().get(i) + " of function " + functionName + " is DOM related.");
-							// add a new DOM variable to compute forward slice in the next AST visit for variables, etc.
-							DOMVariableInfo DV = new DOMVariableInfo(fi.getParams().get(i), fi.getBeginLineNum(), fi.getEndLineNum());
-							DOMVariableInfoList.add(DV);
-							break;
+					if (parent instanceof IfStatement){
+						// check if child is a Scope then the statement belongs to the body of the condition
+						if (child instanceof Scope){ 
+							//System.out.println("DOM access in a condition body");
+							DOMRelatedLines.add(lineNumber);
+						}else{
+							//System.out.println("DOM access in a condition"); // then all the body will be affected
+							int count = parent.toSource().length() - parent.toSource().replace("\n", "").replace("\r", "").length();
+							//System.out.println("Condition body from line " + (parent.getLineno()+1) + " to line " + (parent.getLineno() + count - 2));
+							for (int i=parent.getLineno()+1; i<=parent.getLineno() + count - 2;i++)
+								DOMRelatedLines.add(i);
 						}
+						break;
+					}else if (parent instanceof SwitchStatement){
+						// check if child is a Scope then the statement belongs to the body of the condition
+						if (child instanceof Scope || child instanceof SwitchCase){ 
+							//System.out.println("DOM access in a SwitchStatement body");
+							DOMRelatedLines.add(lineNumber);
+						}else{
+							//System.out.println("DOM access in a SwitchStatement condition"); // then all the body will be affected
+							int count = parent.toSource().length() - parent.toSource().replace("\n", "").replace("\r", "").length();
+							//System.out.println("Condition body from line " + (parent.getLineno()+1) + " to line " + (parent.getLineno() + count - 2));
+							for (int i=parent.getLineno()+1; i<=parent.getLineno() + count - 2;i++)
+								DOMRelatedLines.add(i);
+						}
+						break;
+					}else if (parent instanceof ForLoop || parent instanceof DoLoop || parent instanceof WhileLoop){
+						// check if child is a Scope then the statement belongs to the body of the condition
+						if (child instanceof Scope){ 
+							//System.out.println("DOM access in a Loop body");
+							DOMRelatedLines.add(lineNumber);
+						}else{
+							//System.out.println("DOM access in a Loop condition"); // then all the body will be affected
+							int count = parent.toSource().length() - parent.toSource().replace("\n", "").replace("\r", "").length();
+							//System.out.println("Condition body from line " + (parent.getLineno()+1) + " to line " + (parent.getLineno() + count - 2));
+							for (int i=parent.getLineno()+1; i<=parent.getLineno() + count - 2;i++)
+								DOMRelatedLines.add(i);
+						}
+						break;
+					}else if (parent instanceof ReturnStatement){
+						DOMRelatedLines.add(parent.getLineno()+1);
+						try{
+							enclosingFunction = "";
+							if (node.getEnclosingFunction()!=null)
+								enclosingFunction  = getFunctionName(node.getEnclosingFunction());
+							//System.out.println("enclosingFunction: " + enclosingFunction);
+							// add the enclosing function to the DOM APIs
+							if (!DOMReturningFunction.contains(enclosingFunction))
+								DOMReturningFunction.add(enclosingFunction);
+						}catch(Exception e){}
+						break;
+					}else if (parent instanceof Assignment){
+						DOMRelatedLines.add(parent.getLineno()+1);
+						Assignment asmt = (Assignment) parent;
+						String varName = asmt.getLeft().toSource();
+						//System.out.println(varName + " is set to: " + asmt.getRight().toSource());
+						//System.out.println(varName + " is a: " + asmt.getLeft().shortName());
+						// find the enclosing function node
+						while (!(parent instanceof FunctionNode)){
+							parent = parent.getParent();
+						}
+						FunctionNode fNode = (FunctionNode) parent;
+						// add a new DOM variable
+						DOMVariableInfo DV = new DOMVariableInfo(varName, lineNumber, fNode);
+						DOMVariableInfoList.add(DV);
+						break;
+					}else if (parent instanceof VariableInitializer){
+						DOMRelatedLines.add(parent.getLineno()+1);
+						VariableInitializer vi = (VariableInitializer) parent;
+						String varName = vi.getTarget().toSource();
+						//System.out.println(varName + " is set to: " + vi.getInitializer().toSource());
+						//System.out.println(varName + " is a: " + vi.getTarget().shortName());
+						// find the enclosing function node
+						while (!(parent instanceof FunctionNode)){
+							parent = parent.getParent();
+						}
+						FunctionNode fNode = (FunctionNode) parent;
+						// add a new DOM variable
+						DOMVariableInfo DV = new DOMVariableInfo(varName, lineNumber, fNode);
+						DOMVariableInfoList.add(DV);
+						break;
+					}else if (parent instanceof FunctionCall){
+						// DOM API call as an argument
+						DOMRelatedLines.add(parent.getLineno()+1);
+						FunctionCall pCall = (FunctionCall) parent;
+						AstNode pCallTargetNode = pCall.getTarget(); // node evaluating to the function to call. E.g document.getElemenyById(x)
+						String functionName = pCallTargetNode.toSource();
+						// finding which argument is the function call
+						int i=0;
+						for (; i<pCall.getArguments().size(); i++)
+							if (pCall.getArguments().get(i) instanceof FunctionCall)
+								break;
+						System.out.println("Argument " + (i+1) + " of the function " + functionName + " is DOM related");
+						// search in the list of functions
+						for (FunctionInfo fi : FunctionInfoList){
+							if (fi.getName().equals(functionName)){
+								fi.getParams().get(i);
+								System.out.println("Parameter " + fi.getParams().get(i) + " of function " + functionName + " is DOM related.");
+								// add a new DOM variable to compute forward slice in the next AST visit for variables, etc.
+								DOMVariableInfo DV = new DOMVariableInfo(fi.getParams().get(i), fi.getBeginLineNum(), fi.getEndLineNum());
+								DOMVariableInfoList.add(DV);
+								break;
+							}
+						}
+						break;
 					}
-					break;
-				}
 
-				child = parent;
-				parent = parent.getParent();
-			}
+					child = parent;
+					parent = parent.getParent();
+				}
+			}catch(Exception e){ System.out.println(e);}
 
 			for (int DRL: DOMRelatedLines){
 				if (coveredStatementLines.contains(DRL)){
@@ -752,37 +785,47 @@ public class JSASTInstrumentor implements NodeVisitor{
 
 	private void analyzeProductionCodeAssignmentNode(AstNode node) {
 
-		//////////////////////////////////////// TOOOOOOOOOODDDDDDDDDDDDDDDDDDDDDDD ??????????????????????????????
-
-
 		Assignment asmt = (Assignment) node;
 		String varName = asmt.getLeft().toSource();
+		int lineNumber = node.getLineno()+1;
 		//System.out.println(varName + " is set to: " + asmt.getRight().toSource());
 		// check for pattern  X.onclick = nameOfAFunction  or X.onclick = function()
 		if (isEventMethod(varName)){
 			if (asmt.getRight() instanceof FunctionNode){  // e.g X.onclick = function()
-				System.out.println("An event-dependent callback found at line " + (node.getLineno()+1));
+				System.out.println("An event-dependent callback found at line " + lineNumber);
 				missedEventCallback++;
 			}else if (coveredFunctions.contains(asmt.getRight().toSource())){
-				System.out.println("Covered event-dependent callback at line " + (node.getLineno()+1));
+				System.out.println("Covered event-dependent callback at line " + lineNumber);
 				coveredEventCallback++;
 			}else if (missedFunctions.contains(asmt.getRight().toSource())){
-				System.out.println("Missed event-dependent callback at line " + (node.getLineno()+1));
+				System.out.println("Missed event-dependent callback at line " + lineNumber);
 				missedEventCallback++;
 			}
 			//System.out.println("Event-dependent callback function: " + asmt.toSource());
-
-		}else // checking for DOM element changes 
-			if (isDOMElementAttribute(varName)){
-				int lineNumber = node.getLineno()+1;
-				if (coveredStatementLines.contains(lineNumber)){
-					if (!coveredDOMRelatedLines.contains(lineNumber))	coveredDOMRelatedLines.add(lineNumber);
-					System.out.println("======== Covered DOM access at line" + (node.getLineno()+1) + " - DOM elem attribute: " + varName);
-				}else if (missedStatementLines.contains(lineNumber)){
-					if (!missedDOMRelatedLines.contains(lineNumber))		missedDOMRelatedLines.add(lineNumber);
-					System.out.println("======== Missed DOM access at line" + (node.getLineno()+1) + " - DOM elem attribute: " + varName);
-				}
+		}
+		// checking for DOM element changes 
+		AstNode parent = node;
+		if (isDOMElementAttribute(varName)){
+			if (coveredStatementLines.contains(lineNumber)){
+				if (!coveredDOMRelatedLines.contains(lineNumber))	coveredDOMRelatedLines.add(lineNumber);
+				System.out.println("======== Covered DOM access at line" + lineNumber + " - DOM elem attribute: " + varName);
+			}else if (missedStatementLines.contains(lineNumber)){
+				if (!missedDOMRelatedLines.contains(lineNumber))		missedDOMRelatedLines.add(lineNumber);
+				System.out.println("======== Missed DOM access at line" + lineNumber + " - DOM elem attribute: " + varName);
 			}
+
+			// this part is for DOM related slicing
+			// find the enclosing function node
+			while (!(parent instanceof FunctionNode)){
+				parent = parent.getParent();
+			}
+			FunctionNode fNode = (FunctionNode) parent;
+			// add a new DOM variable
+			DOMVariableInfo DV = new DOMVariableInfo(varName, lineNumber, fNode);
+			DOMVariableInfoList.add(DV);
+
+		}
+
 	}
 
 
@@ -1407,11 +1450,14 @@ public class JSASTInstrumentor implements NodeVisitor{
 		this.visitType = visitType;
 	}
 
-	public void setCoverageInfo(ArrayList<Integer> coveredStatementLines, ArrayList<Integer> missedStatementLines, ArrayList<Integer> coveredFunctionsIndices, ArrayList<Integer> missedFunctionsIndices) {
+	public void setCoverageInfo(ArrayList<Integer> coveredStatementLines, ArrayList<Integer> missedStatementLines, ArrayList<Integer> coveredFunctionsIndices, ArrayList<Integer> missedFunctionLines) {
 		this.coveredStatementLines = coveredStatementLines;
 		this.missedStatementLines = missedStatementLines;
 		this.coveredFunctionsIndices = coveredFunctionsIndices;
-		this.missedFunctionsIndices = missedFunctionsIndices;
+
+		if (!missedFunctionLines.equals(null)){
+			this.missedFunctionLines = missedFunctionLines;
+		}
 
 		for (int i=0; i< missedStatementLines.size(); i++)
 			missedStatementInMissedFunction.add(-1);
