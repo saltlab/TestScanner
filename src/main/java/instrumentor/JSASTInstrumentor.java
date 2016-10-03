@@ -412,7 +412,14 @@ public class JSASTInstrumentor implements NodeVisitor{
 
 		//System.out.println("Function name: " + functionName);
 		AstNode parentNode = node.getParent();
-		String parentNodeSource = parentNode.toSource();
+		System.out.println("lineNumber: " + lineNumber);
+
+		try{
+			String parentNodeSource = parentNode.toSource();
+		}catch (Exception e){
+			System.out.println(e);
+		}
+
 		String parentNodeName = parentNode.shortName();
 		//System.out.println("shortName: " + shortName);
 		//System.out.println("parentNodeName: " + parentNodeName);
@@ -493,7 +500,12 @@ public class JSASTInstrumentor implements NodeVisitor{
 		}else if (parentNodeName.equals("FunctionCall")){
 			FunctionCall parentNodeFunctionCall = (FunctionCall) parentNode;
 			AstNode targetNode = parentNodeFunctionCall.getTarget();
-			String targetSource = targetNode.toSource();
+			String targetSource = "";
+			try{
+				targetSource = targetNode.toSource();
+			}catch(Exception e){
+				System.out.println(e);
+			}
 			//System.out.println("targetSource: ++++++++" + targetSource);
 
 			// check for callback
@@ -533,7 +545,11 @@ public class JSASTInstrumentor implements NodeVisitor{
 		}else if (parentNodeName.equals("Block")){
 			//System.out.println("enclosingFunction: " + enclosingFunction);
 			AstNode parentParentNode = parentNode.getParent();
-			String parentParentNodeSource = parentParentNode.toSource();
+			try{
+				String parentParentNodeSource = parentParentNode.toSource();
+			}catch (Exception e){
+				System.out.println(e);
+			}
 			String parentParentNodeName = parentParentNode.shortName();
 			//System.out.println("shortName: " + shortName);
 			//System.out.println("parentParentNodeName: " + parentParentNodeName);
@@ -593,7 +609,12 @@ public class JSASTInstrumentor implements NodeVisitor{
 		 */
 		FunctionCall fcall = (FunctionCall) node;
 		AstNode targetNode = fcall.getTarget(); // node evaluating to the function to call. E.g document.getElemenyById(x)
-		String targetSource = targetNode.toSource();
+		String targetSource = "";
+		try{		
+			targetSource = targetNode.toSource();
+		}catch (Exception e){
+			System.out.println(e);
+		}
 		//System.out.println("Calling function " + targetSource);
 		//System.out.println("node.getLineno() : " + (node.getLineno()+1));
 
@@ -817,6 +838,8 @@ public class JSASTInstrumentor implements NodeVisitor{
 			// this part is for DOM related slicing
 			// find the enclosing function node
 			while (!(parent instanceof FunctionNode)){
+				if (parent == null)
+					return;
 				parent = parent.getParent();
 			}
 			FunctionNode fNode = (FunctionNode) parent;
@@ -832,94 +855,98 @@ public class JSASTInstrumentor implements NodeVisitor{
 
 
 	private void analyzeDOMRelatedSlice(AstNode node) {
+		try{
 
-		String varName = "";
-
-		if (node instanceof Name){
-			Name name = (Name) node;
-			varName = name.toSource();
-		}else if (node instanceof PropertyGet){
-			PropertyGet name = (PropertyGet) node;
-			varName = name.toSource();
-		}else if (node instanceof ElementGet){
-			ElementGet name = (ElementGet) node;
-			varName = name.toSource();
-		}
-
-		int lineNumber = node.getLineno()+1;
-		HashSet<Integer> DOMRelatedLines = new HashSet<Integer>();
-		for (DOMVariableInfo DV: DOMVariableInfoList){
-			if (DV.isUsedInForwardSlice(varName, node.getLineno()+1)){
-				//System.out.println(varName + " is a DOMVariable used at line: " + (node.getLineno()+1));
-				AstNode child = node;
-				AstNode parent = node.getParent();
-				while (!(parent instanceof FunctionNode)){
-					//System.out.println("node parent: " + parent.toSource());
-					//System.out.println("node parent.shortName(): " + parent.shortName());
-
-					if (parent instanceof IfStatement){
-						// check if child is a Scope then the statement belongs to the body of the condition
-						if (child instanceof Scope){ 
-							//System.out.println("DOM access in a condition body");
-							DOMRelatedLines.add(lineNumber);
-						}
-						else{
-							//System.out.println("DOM access in a condition"); // then all the body will be affected
-							int count = parent.toSource().length() - parent.toSource().replace("\n", "").replace("\r", "").length();
-							//System.out.println("Condition body from line " + (parent.getLineno()+1) + " to line " + (parent.getLineno() + count - 2));
-							for (int i=parent.getLineno()+1; i<=parent.getLineno() + count - 2;i++)
-								DOMRelatedLines.add(i);
-						}
-						break;
-					}else if (parent instanceof SwitchStatement){
-						// check if child is a Scope then the statement belongs to the body of the condition
-						if (child instanceof Scope || child instanceof SwitchCase){ 
-							//System.out.println("DOM access in a SwitchStatement body");
-							DOMRelatedLines.add(lineNumber);
-						}
-						else{
-							//System.out.println("DOM access in a SwitchStatement condition"); // then all the body will be affected
-							int count = parent.toSource().length() - parent.toSource().replace("\n", "").replace("\r", "").length();
-							//System.out.println("Condition body from line " + (parent.getLineno()+1) + " to line " + (parent.getLineno() + count - 2));
-							for (int i=parent.getLineno()+1; i<=parent.getLineno() + count - 2;i++)
-								DOMRelatedLines.add(i);
-						}
-						break;
-					}else if (parent instanceof ForLoop || parent instanceof DoLoop || parent instanceof WhileLoop){
-						// check if child is a Scope then the statement belongs to the body of the condition
-						if (child instanceof Scope){ 
-							//System.out.println("DOM access in a Loop body");
-							DOMRelatedLines.add(lineNumber);
-						}
-						else{
-							//System.out.println("DOM access in a Loop condition"); // then all the body will be affected
-							int count = parent.toSource().length() - parent.toSource().replace("\n", "").replace("\r", "").length();
-							//System.out.println("Condition body from line " + (parent.getLineno()+1) + " to line " + (parent.getLineno() + count - 2));
-							for (int i=parent.getLineno()+1; i<=parent.getLineno() + count - 2;i++)
-								DOMRelatedLines.add(i);
-						}
-						break;
-					}
-					child = parent;
-					parent = parent.getParent();
-				}
-
-				for (int DRL: DOMRelatedLines){
-					if (coveredStatementLines.contains(DRL)){
-						if (!coveredDOMRelatedLines.contains(DRL)){
-							coveredDOMRelatedLines.add(DRL);
-							System.out.println("======== Covered DOM related statement at line" + DRL);
-						}
-					}else if (missedStatementLines.contains(DRL)){
-						if (!missedDOMRelatedLines.contains(DRL)){
-							missedDOMRelatedLines.add(DRL);
-							System.out.println("======== Missed DOM related statement at line" + DRL);
-						}
-					}
-				}
-
+			String varName = "";
+			if (node instanceof Name){
+				Name name = (Name) node;
+				varName = name.toSource();
+			}else if (node instanceof PropertyGet){
+				PropertyGet name = (PropertyGet) node;
+				varName = name.toSource();
+			}else if (node instanceof ElementGet){
+				ElementGet name = (ElementGet) node;
+				varName = name.toSource();
 			}
+
+			int lineNumber = node.getLineno()+1;
+			HashSet<Integer> DOMRelatedLines = new HashSet<Integer>();
+			for (DOMVariableInfo DV: DOMVariableInfoList){
+				if (DV.isUsedInForwardSlice(varName, node.getLineno()+1)){
+					//System.out.println(varName + " is a DOMVariable used at line: " + (node.getLineno()+1));
+					AstNode child = node;
+					AstNode parent = node.getParent();
+					while (!(parent instanceof FunctionNode)){
+						//System.out.println("node parent: " + parent.toSource());
+						//System.out.println("node parent.shortName(): " + parent.shortName());
+
+						if (parent instanceof IfStatement){
+							// check if child is a Scope then the statement belongs to the body of the condition
+							if (child instanceof Scope){ 
+								//System.out.println("DOM access in a condition body");
+								DOMRelatedLines.add(lineNumber);
+							}
+							else{
+								//System.out.println("DOM access in a condition"); // then all the body will be affected
+								int count = parent.toSource().length() - parent.toSource().replace("\n", "").replace("\r", "").length();
+								//System.out.println("Condition body from line " + (parent.getLineno()+1) + " to line " + (parent.getLineno() + count - 2));
+								for (int i=parent.getLineno()+1; i<=parent.getLineno() + count - 2;i++)
+									DOMRelatedLines.add(i);
+							}
+							break;
+						}else if (parent instanceof SwitchStatement){
+							// check if child is a Scope then the statement belongs to the body of the condition
+							if (child instanceof Scope || child instanceof SwitchCase){ 
+								//System.out.println("DOM access in a SwitchStatement body");
+								DOMRelatedLines.add(lineNumber);
+							}
+							else{
+								//System.out.println("DOM access in a SwitchStatement condition"); // then all the body will be affected
+								int count = parent.toSource().length() - parent.toSource().replace("\n", "").replace("\r", "").length();
+								//System.out.println("Condition body from line " + (parent.getLineno()+1) + " to line " + (parent.getLineno() + count - 2));
+								for (int i=parent.getLineno()+1; i<=parent.getLineno() + count - 2;i++)
+									DOMRelatedLines.add(i);
+							}
+							break;
+						}else if (parent instanceof ForLoop || parent instanceof DoLoop || parent instanceof WhileLoop){
+							// check if child is a Scope then the statement belongs to the body of the condition
+							if (child instanceof Scope){ 
+								//System.out.println("DOM access in a Loop body");
+								DOMRelatedLines.add(lineNumber);
+							}
+							else{
+								//System.out.println("DOM access in a Loop condition"); // then all the body will be affected
+								int count = parent.toSource().length() - parent.toSource().replace("\n", "").replace("\r", "").length();
+								//System.out.println("Condition body from line " + (parent.getLineno()+1) + " to line " + (parent.getLineno() + count - 2));
+								for (int i=parent.getLineno()+1; i<=parent.getLineno() + count - 2;i++)
+									DOMRelatedLines.add(i);
+							}
+							break;
+						}
+						child = parent;
+						parent = parent.getParent();
+					}
+
+					for (int DRL: DOMRelatedLines){
+						if (coveredStatementLines.contains(DRL)){
+							if (!coveredDOMRelatedLines.contains(DRL)){
+								coveredDOMRelatedLines.add(DRL);
+								System.out.println("======== Covered DOM related statement at line" + DRL);
+							}
+						}else if (missedStatementLines.contains(DRL)){
+							if (!missedDOMRelatedLines.contains(DRL)){
+								missedDOMRelatedLines.add(DRL);
+								System.out.println("======== Missed DOM related statement at line" + DRL);
+							}
+						}
+					}
+
+				}
+			}
+		}catch (Exception e){
+			System.out.println(e);
 		}
+
 	}
 
 
@@ -980,14 +1007,17 @@ public class JSASTInstrumentor implements NodeVisitor{
 		boolean testCall = false;
 		boolean testModuleCall = false;
 		if (testsFramework.equals("qunit")){
-			if (targetNode.toSource().equals("QUnit.test") || targetNode.toSource().equals("test") || targetNode.toSource().equals("QUnit.asyncTest") || targetNode.toSource().equals("asyncTest"))
+			if (targetNode.toSource().equals("QUnit.test") || targetNode.toSource().equals("test") || targetNode.toSource().equals("QUnit.asyncTest") || targetNode.toSource().equals("asyncTest")
+					||
+					targetNode.toSource().equals("QUnit.test.apply") || targetNode.toSource().equals("test.apply") || targetNode.toSource().equals("QUnit.asyncTest.apply") || targetNode.toSource().equals("asyncTest.apply")
+					)
 				testCall = true;
 			else if (targetNode.toSource().equals("QUnit.module") || targetNode.toSource().equals("module"))
 				testModuleCall = true;
 		}else if (testsFramework.equals("jasmine") || testsFramework.equals("mocha")){
-			if (targetNode.toSource().equals("it"))
+			if (targetNode.toSource().equals("it") || targetNode.toSource().equals("test.it"))
 				testCall = true;
-			else if (targetNode.toSource().equals("describe"))
+			else if (targetNode.toSource().equals("describe") || targetNode.toSource().equals("test.describe"))
 				testModuleCall = true;
 		}
 
@@ -996,7 +1026,7 @@ public class JSASTInstrumentor implements NodeVisitor{
 
 			String type = "sync";
 			// check if it's a sync or an async test
-			if (targetNode.toSource().equals("QUnit.asyncTest") || targetNode.toSource().equals("asyncTest")){
+			if (targetNode.toSource().equals("QUnit.asyncTest") || targetNode.toSource().equals("asyncTest") || targetNode.toSource().equals("QUnit.asyncTest.apply") || targetNode.toSource().equals("asyncTest.apply") ){
 				type = "async";
 				asyncTestCounter++;
 			}
@@ -1049,7 +1079,7 @@ public class JSASTInstrumentor implements NodeVisitor{
 				"assert.notDeepEqual", "notDeepEqual", "assert.strictEqual", "strictEqual", "assert.notStrictEqual", "notStrictEqual", "QUnit.ok", "assert.ok", "ok", "assert.notOk", "notOk", 
 				"assert.propEqual", "propEqual", "assert.notPropEqual", "notPropEqual", "assert.push", "assert.throws", "throws", "assert.async", "assert"};		
 
-		String[] jasmineAssertionSkipList = { "expect", "assert"};		
+		String[] jasmineAssertionSkipList = { "expect", "assert", "should."};		
 
 		String[] assertionSkipList = {};		
 		String[] otherSkipList = {};
@@ -1230,12 +1260,12 @@ public class JSASTInstrumentor implements NodeVisitor{
 
 		if (targetNode.toSource().equals("QUnit.module") || targetNode.toSource().equals("module"))
 			currentTest  = "TestModule";
-		if (targetNode.toSource().equals("QUnit.test") || targetNode.toSource().equals("test")){ 
+		if (targetNode.toSource().equals("QUnit.test") || targetNode.toSource().equals("test") || targetNode.toSource().equals("QUnit.test.apply") || targetNode.toSource().equals("test.apply")){ 
 			currentTestNumber++;
 			currentTest = "Test" + Integer.toString(currentTestNumber);
 			setTestCounter(getTestCounter() + 1);
 		}
-		if (targetNode.toSource().equals("QUnit.asyncTest()") || targetNode.toSource().equals("asyncTest()")){
+		if (targetNode.toSource().equals("QUnit.asyncTest()") || targetNode.toSource().equals("asyncTest()") || targetNode.toSource().equals("QUnit.asyncTest().apply") || targetNode.toSource().equals("asyncTest().apply")){
 			currentTestNumber++;
 			currentTest = "AsynchTest" + Integer.toString(currentTestNumber);
 			setAsynchTestCounter(getAsynchTestCounter() + 1);
@@ -1455,7 +1485,7 @@ public class JSASTInstrumentor implements NodeVisitor{
 		this.missedStatementLines = missedStatementLines;
 		this.coveredFunctionsIndices = coveredFunctionsIndices;
 
-		if (!missedFunctionLines.equals(null)){
+		if (missedFunctionLines!=null){
 			this.missedFunctionLines = missedFunctionLines;
 		}
 

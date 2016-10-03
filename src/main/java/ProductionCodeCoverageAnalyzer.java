@@ -116,12 +116,13 @@ public class ProductionCodeCoverageAnalyzer {
 					System.out.println("missedStatementLines: " + missedStatementLines);
 
 					ArrayList functionData = (ArrayList)innerObj.get("functionData");
-					for (int i=0; i<functionData.size(); i++){
-						//System.out.println("++++" + functionData.get(i));
-						if (functionData.get(i)!=null && !functionData.get(i).toString().equals("0")){//  coveredStatementLines
-							coveredFunctionsIndices.add(i);
+					if (functionData!=null)
+						for (int i=0; i<functionData.size(); i++){
+							//System.out.println("++++" + functionData.get(i));
+							if (functionData.get(i)!=null && !functionData.get(i).toString().equals("0")){//  coveredStatementLines
+								coveredFunctionsIndices.add(i);
+							}
 						}
-					}
 					//System.out.println("coveredFunctionsIndices: " + coveredFunctionsIndices);
 					//System.out.println("missedFunctionsIndices: " + missedFunctionsIndices);
 
@@ -154,7 +155,7 @@ public class ProductionCodeCoverageAnalyzer {
 					//String jsFile = file.getCanonicalPath();
 					//String jsFile = file.getCanonicalPath().substring(file.getCanonicalPath().lastIndexOf("/")+1);
 					String jsFile = coverFileCanonPath.substring(coverFileCanonPath.indexOf(lf_jsCoveragePath)+lf_jsCoveragePath.length()).replace(".html", "");
-					//System.out.println("Corresponding js file:" + jsFile);
+					System.out.println("Corresponding js file:" + jsFile);
 					jsFileCanonicalPathList.add(coverFile.getCanonicalPath());
 
 					System.out.println("Getting the corresponding js files in " + suorceDir.getCanonicalPath() + " including subdirectories.");
@@ -163,11 +164,11 @@ public class ProductionCodeCoverageAnalyzer {
 					for (File source_file : source_files) {
 						String jsSourceFile = source_file.getCanonicalPath();
 						//String jsSourceFile = source_file.getCanonicalPath().substring(source_file.getCanonicalPath().lastIndexOf("/")+1);
-						if (jsSourceFile.contains(jsFile)){
+						//System.out.println(jsSourceFile);
+						if (jsSourceFile.endsWith(jsFile.replace("__root__/","")) && !jsSourceFile.contains(".grunt") && !jsSourceFile.contains("node_modules")){
 							System.out.println(jsSourceFile);
 							System.out.println(coverFileCanonPath);
 							// for lcov: read coverFile string by string and if equals cline-neutral, cline-yes, and cline-no, ...etc. start counetr from 1. add the counetr to ciovered/missed list
-
 
 							BufferedReader br = new BufferedReader(new FileReader(coverFile));
 							String line;

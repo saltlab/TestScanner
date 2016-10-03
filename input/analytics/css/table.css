@@ -1,5 +1,0 @@
-#table { border-collapse: collapse; background: #EEE; border-spacing: 0; width: 80%; margin: 0 auto; }
-#table th, #table table td { padding: 10px; }
-#table th { background: #5B799E; border-bottom: 5px solid #36485e; border-right: solid 1px #475F7C; }
-#table td { border-right: 1px solid #FFF; }
-#table tr.odd td { background: #DFDFDF; }

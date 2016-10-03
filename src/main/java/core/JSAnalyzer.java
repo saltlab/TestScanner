@@ -431,14 +431,9 @@ public class JSAnalyzer {
 			/* clean up */
 			Context.exit();
 		} catch (RhinoException re) {
-			System.err.println(re.getMessage());
-			System.out.println("Unable to instrument. This might be a JSON response sent"
-					+ " with the wrong Content-Type or a syntax error.");
-		} catch (IllegalArgumentException iae) {
-
-			System.out.println("Invalid operator exception catched. Not instrumenting code.");
+			System.err.println("Parsing error: " + re.getMessage());
 		}
-
+		
 		//System.out.println("Here is the corresponding buffer: \n" + input + "\n");
 		
 		astVisitor.setVisitType("");
@@ -510,9 +505,7 @@ public class JSAnalyzer {
 			/* clean up */
 			Context.exit();
 		} catch (RhinoException re) {
-			System.err.println(re.getMessage());
-			System.out.println("Unable to instrument. This might be a JSON response sent"
-					+ " with the wrong Content-Type or a syntax error.");
+			System.err.println("Parsing error: " + re.getMessage());
 		}
 
 		astVisitor.setVisitType("");

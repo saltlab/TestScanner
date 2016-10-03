@@ -28,44 +28,18 @@ import core.TraceAnalyzer;
 
 public class TestCodePropertyAnalyzer {
 
-	private static String testsFramework = "qunit";  // {"qunit", "jasmine", "mocha"}
+	private static String testsFramework = "mocha";  // {"qunit", "jasmine", "mocha", "nodeunit"}
 	private static String testsFolder = "/Users/aminmf/Documents/JavaScriptTestsStudy/popularJS/pageres/test/";
-	
-	//private static String testsFolder = "/Users/aminmf/Documents/JavaScriptTestsStudy/popularJS/velocity/test/";
-	//private static String testsFolder = "/Users/aminmf/Documents/JavaScriptTestsStudy/popularJS/lazysizes/tests/";   // => QUnit.test.apply
-	//private static String testsFolder = "/Users/aminmf/Documents/JavaScriptTestsStudy/popularJS/ember.js/tests/"; => Wrong answer! also consider node-test folder
-	//private static String testsFolder = "/Users/aminmf/Documents/JavaScriptTestsStudy/popularJS/sizzle/test/"; => Wrong answer!
-	//private static String testsFolder = "/Users/aminmf/Documents/JavaScriptTestsStudy/popularJS/moment/src/test/";
 		
-
-	//private static String testsFramework = "jasmine";
-	//private static String testsFolder = "/Users/aminmf/Documents/JavaScriptTestsStudy/popularJS/dropzone/test";
-
-	
-	
-	//private static String testsFramework = "mocha";
-	//private static String testsFolder = "/Users/aminmf/Documents/JavaScriptTestsStudy/popularJS/dropzone/test";
-	//private static String testsFolder = "/Users/aminmf/Documents/JavaScriptTestsStudy/popularJS/material-ui/test";
-	//private static String testsFolder = "/Users/aminmf/Documents/JavaScriptTestsStudy/popularJS/redux/test";
-	//private static String testsFolder = "/Users/aminmf/Documents/JavaScriptTestsStudy/popularJS/snabbt.js/src/tests";
-	//private static String testsFolder = "/Users/aminmf/Documents/JavaScriptTestsStudy/popularJS/webpack/test";
-	//private static String testsFolder = "/Users/aminmf/Documents/JavaScriptTestsStudy/popularJS/component/test";
-
-		
-	
 	private static String[] excludeFolders = {"assets", "coverage", "lib", "libs", "casper", "lcov-report"	};		
 	
 
-	private static ArrayList<String> jsFileNames = new ArrayList<String>();
 	private static JSAnalyzer codeAnalyzer;
-	private static TraceAnalyzer traceAnalyzer = new TraceAnalyzer();
 	private static int NumTests;
 	private static int NumAsyncTests;
-	private static int NumTestModules;
 	private static int NumAssertions;
 	private static int NumFunCallTest = 0;
 	private static int NumFunCallTestModule = 0;
-	private static int NumTotalFunCall = 0;
 	private static int MaxFunCall = 0;
 	private static float AveFunCall = 0;
 	private static int NumTriggerInTest;
@@ -141,7 +115,6 @@ public class TestCodePropertyAnalyzer {
 		
 		NumTests += codeAnalyzer.getNumTests();
 		NumAsyncTests += codeAnalyzer.getNumAsyncTests();
-		NumTestModules += codeAnalyzer.getNumTestModules();
 		NumAssertions += codeAnalyzer.getNumAssertions();
 		NumFunCallTest += codeAnalyzer.getNumFunCallTest();
 		NumFunCallTestModule += codeAnalyzer.getNumFunCallTestModule();
@@ -155,7 +128,6 @@ public class TestCodePropertyAnalyzer {
 		System.out.println("==========================");
 		System.out.println("++++ NumTests: " + NumTests);
 		System.out.println("++++ NumAsyncTests: " + NumAsyncTests);
-		System.out.println("++++ NumTestModules: " + NumTestModules);
 		System.out.println("++++ NumAssertions: " + NumAssertions);
 		System.out.println("++++ NumFunCall: " + NumFunCallTest);
 		System.out.println("++++ MaxFunCall: " + MaxFunCall);
@@ -164,7 +136,7 @@ public class TestCodePropertyAnalyzer {
 		System.out.println("++++ NumObjCreate: " + NumObjCreate);
 		System.out.println("==========================");
 
-		System.out.println(NumTests + "\t" + NumAsyncTests + "\t" + NumTestModules + "\t" + NumAssertions + "\t" + NumFunCallTest + "\t" + MaxFunCall + "\t" + AveFunCall + "\t" + NumTriggerInTest + "\t" + NumObjCreate);
+		System.out.println(NumTests + "\t" + NumAsyncTests + "\t" + NumAssertions + "\t" + NumFunCallTest + "\t" + MaxFunCall + "\t" + AveFunCall + "\t" + NumTriggerInTest + "\t" + NumObjCreate);
 	}
 
 	
