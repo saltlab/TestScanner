@@ -13,4 +13,4 @@ In addition, given a URL to a Github repo for a JavaScript application it extrac
 Subjects and analysis results
 ======
 
-You can find more information on the study that we carried [here](http://www.ece.ubc.ca/~aminmf/js_test_study.html).
+You can find more information on the study that we carried out [here](http://www.ece.ubc.ca/~aminmf/js_test_study.html).
